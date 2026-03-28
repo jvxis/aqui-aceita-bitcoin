@@ -1,19 +1,34 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <section class="hero-section compact-hero">
+  <section class="hero-section compact-hero directory-hero">
     <div class="hero-grid">
       <div class="hero-copy">
         <span class="eyebrow">Diretório público</span>
-        <h1 class="headline">Estabelecimentos cadastrados no projeto</h1>
+        <h1 class="headline">Locais que já aceitam Bitcoin</h1>
         <p class="lead">
-          Use o diretório para mostrar prova social, descobrir locais ativos e acompanhar a expansão da iniciativa.
+          Use o diretório para descobrir pontos ativos, reforçar prova social e acompanhar a expansão da iniciativa.
         </p>
       </div>
       <aside class="hero-card">
         <span class="card-kicker">Base atual</span>
-        <h2 class="hero-card-title">{{ establishments|length }} registros públicos no banco.</h2>
+        <h2 class="hero-card-title">{{ establishments|length }} registros públicos catalogados.</h2>
+        <p class="muted-text">A lista abaixo pode ser filtrada por nome, tipo de negócio e forma de recebimento.</p>
       </aside>
+    </div>
+  </section>
+
+  <section class="page-panel map-panel directory-map-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Mapa</span>
+        <h2 class="section-heading">Visão rápida dos estabelecimentos no BTC Map</h2>
+      </div>
+      <a href="https://btcmap.org/map#6/-23.7/-48.7" target="_blank" rel="noopener" class="btn btn-secondary">Abrir mapa completo</a>
+    </div>
+    <p class="muted-text">O mapa funciona como visão geral. A lista abaixo continua sendo a referência para detalhes e filtros do diretório.</p>
+    <div class="map-shell">
+      <iframe class="map-frame" src="https://btcmap.org/map#6/-23.7/-48.7" title="BTC Map de estabelecimentos" loading="lazy" allowfullscreen></iframe>
     </div>
   </section>
 
@@ -51,7 +66,7 @@
       </label>
     </div>
 
-    <div id="establishmentsDirectory" class="card-grid"></div>
+    <div id="establishmentsDirectory" class="card-grid directory-grid"></div>
 
     <div id="directoryEmptyState" class="empty-state" {% if establishments %}hidden{% endif %}>
       <h2>Nenhum estabelecimento cadastrado ainda.</h2>

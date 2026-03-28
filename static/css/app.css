@@ -203,7 +203,6 @@ pre {
 
 .nav-links,
 .nav-actions,
-.mobile-nav,
 .footer-list,
 .feature-list,
 .compact-list,
@@ -251,9 +250,18 @@ pre {
 }
 
 .mobile-nav {
+  display: none;
   margin-top: 10px;
   flex-direction: column;
   padding: 18px;
+}
+
+.mobile-nav:not([hidden]) {
+  display: flex;
+}
+
+.mobile-nav[hidden] {
+  display: none !important;
 }
 
 .page-shell,
@@ -283,6 +291,10 @@ pre {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.directory-grid {
+  grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+}
+
 .steps-grid,
 .benefits-grid,
 .metric-strip {
@@ -293,9 +305,12 @@ pre {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.form-two-columns,
-.filter-bar {
+.form-two-columns {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.filter-bar {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .hero-section,
@@ -379,8 +394,12 @@ pre {
 
 .headline {
   margin: 14px 0;
-  font-size: clamp(2.3rem, 4.7vw, 4rem);
+  font-size: clamp(1.8rem, 3.2vw, 2.85rem);
   line-height: 1.03;
+}
+
+.compact-hero .headline {
+  font-size: clamp(1.55rem, 2.45vw, 2.2rem);
 }
 
 .lead,
@@ -830,6 +849,11 @@ textarea {
   gap: 18px;
 }
 
+.directory-map-panel .map-shell,
+.directory-map-panel .map-frame {
+  min-height: 520px;
+}
+
 .map-shell {
   overflow: hidden;
   min-height: 420px;
@@ -937,6 +961,11 @@ textarea {
   align-items: center;
 }
 
+.directory-hero .hero-grid {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: stretch;
+}
+
 .footer-card h3 {
   font-family: "Space Grotesk", sans-serif;
   margin-bottom: 12px;
@@ -1036,6 +1065,11 @@ textarea {
 
   .headline {
     font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .directory-map-panel .map-shell,
+  .directory-map-panel .map-frame {
+    min-height: 420px;
   }
 }
 
