@@ -16,9 +16,9 @@ app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 CORS(app)
 
 DB_FILE_PATH = dotenv.get_key(".env", "DB_FILE_PATH") or "database.db"
+PORT = int(dotenv.get_key(".env", "PORT") or os.getenv("PORT") or 5000)
 UPLOAD_FOLDER = os.path.join(app.static_folder, "logos")
 ALLOWED_LOGO_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "svg"}
-
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 TYPE_LABELS = {
@@ -539,6 +539,6 @@ init_db()
 
 if __name__ == "__main__":
     host = os.getenv("FLASK_HOST", "0.0.0.0")
-    port = int(os.getenv("FLASK_PORT", "5000"))
+    port = int(os.getenv("FLASK_PORT") or PORT)
     debug = os.getenv("FLASK_DEBUG", "").lower() in {"1", "true", "yes", "on"}
     app.run(host=host, port=port, debug=debug)
