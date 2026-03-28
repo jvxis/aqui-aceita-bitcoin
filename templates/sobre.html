@@ -86,7 +86,7 @@
     <div class="team-grid">
       {% for member in team %}
         <article class="team-card">
-          <div class="avatar">{{ member.name[0] }}</div>
+          <div class="avatar">{{ member.name[:2] if member.name|length <= 3 else member.name[0] }}</div>
           <h3>{{ member.name }}</h3>
           <span class="role-label">{{ member.role }}</span>
           <p>{{ member.bio }}</p>

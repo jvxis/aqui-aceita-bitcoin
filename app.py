@@ -243,7 +243,7 @@ TIMELINE = [
 
 TEAM = [
     {
-        "name": "Jaime",
+        "name": "JVX",
         "role": "Coordenação e produto",
         "bio": "Responsável pela condução do projeto, curadoria do conteúdo e direção de produto da plataforma.",
     },
