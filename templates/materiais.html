@@ -1,387 +1,89 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "base.html" %}
 
-<head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZQVS83N61C"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZQVS83N61C');
-    </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Materiais de Divulgação - Aceita Bitcoin?</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/btcmap-flags.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/materiais.css') }}">
-</head>
-
-<body>
-  <div id="header-placeholder"></div>
-  <main>
-    <section class="container">
-      <h1 class="section-title">Materiais de Divulgação</h1>
-      <p class="section-subtitle">Recursos para ajudar a expandir o projeto "Aceita Bitcoin?" em sua região</p>
-
-      <div class="intro-section">
-        <div class="intro-content">
-          <h2 class="intro-title">Nossa Missão</h2>
-          <p class="intro-text">
-            Disponibilizamos uma série de materiais para ajudar na divulgação e implementação do Bitcoin como meio de
-            pagamento em estabelecimentos comerciais. Estes recursos foram desenvolvidos com base na experiência
-            bem-sucedida de Rolante-RS, onde mais de 30 estabelecimentos já aceitam Bitcoin.
-          </p>
-          <p class="intro-text">
-            Nosso objetivo é facilitar a adoção do Bitcoin, fornecendo materiais informativos, modelos de mensagens,
-            adesivos e cartazes que podem ser utilizados por qualquer pessoa interessada em expandir a rede Bitcoin em
-            sua região.
-          </p>
-        </div>
-        <div class="intro-image">
-          <img src="{{ url_for('static', filename='img/materiais_sucesso_fredericas.png') }}" alt="Exemplo de uso do adesivo Bitcoin na Frederica's"
-            style="width: 50%; height: auto; align-self: center; object-fit: contain;">
-        </div>
-      </div>
-    </section>
-
-    <section class="materials-container">
-      <div class="materials-tabs">
-        <button class="tab-button active" onclick="openTab(event, 'whatsapp')">Mensagens WhatsApp</button>
-        <button class="tab-button" onclick="openTab(event, 'print')">Materiais para Impressão</button>
-        <button class="tab-button" onclick="openTab(event, 'case-studies')">Casos de Sucesso</button>
-        <button class="tab-button" onclick="openTab(event, 'resources')">Apostilas e Recursos</button>
-      </div>
-
-      <!-- Aba de Mensagens WhatsApp -->
-      <div id="whatsapp" class="tab-content active">
-        <h3>Mensagens Prontas para WhatsApp</h3>
-        <p>Utilize estas mensagens para abordar estabelecimentos e convidá-los a participar do projeto "Aceita
-          Bitcoin?".</p>
-
-        <div class="whatsapp-message">
-          <div class="whatsapp-message-header">
-            <div class="whatsapp-message-title">Primeira Abordagem - Caso Rolante-RS</div>
-            <button class="copy-button" onclick="copyToClipboard('message1')">
-              <i class="fas fa-copy"></i> Copiar
-            </button>
-          </div>
-          <div id="message1" class="whatsapp-message-content">Olá! Tudo bem?
-
-            Gostaria de compartilhar uma iniciativa que está transformando o comércio local em Rolante-RS. Lá, mais de
-            200 estabelecimentos já aceitam Bitcoin como forma de pagamento, o que tem atraído turistas e novos clientes
-            para a região.
-
-            O projeto "Aceita Bitcoin?" tem impactado positivamente a economia local, com aumento real no
-            faturamento dos estabelecimentos participantes.
-
-            Estamos trazendo essa iniciativa para Carambeí e gostaria de convidar seu estabelecimento a fazer parte
-            desse movimento inovador.
-
-            Você pode conhecer mais sobre o projeto em nosso site: www.aquiaceitabitcoin.com.br
-
-            Podemos conversar mais sobre isso? Estou à disposição para tirar dúvidas ou até mesmo agendar uma visita ao
-            seu estabelecimento para ajudar no cadastro e realizar a primeira compra em Bitcoin.
-
-            Aguardo seu retorno!
-          </div>
-        </div>
-
-        <div class="whatsapp-message">
-          <div class="whatsapp-message-header">
-            <div class="whatsapp-message-title">Segundo Dia - Benefícios para o Estabelecimento</div>
-            <button class="copy-button" onclick="copyToClipboard('message2')">
-              <i class="fas fa-copy"></i> Copiar
-            </button>
-          </div>
-          <div id="message2" class="whatsapp-message-content">Olá novamente!
-
-            Gostaria de compartilhar alguns benefícios dos estabelecimentos que recebem em Bitcoin:
-
-            ✅ Redução de taxas: pagamentos em Bitcoin têm taxas muito menores que cartões de crédito
-            ✅ Sem chargebacks: transações são irreversíveis, eliminando fraudes
-            ✅ Visibilidade global: seu estabelecimento aparece no mapa mundial do Bitcoin
-            ✅ Diferencial competitivo: atrai clientes interessados em tecnologia e inovação
-            ✅ Pagamentos instantâneos: receba o valor na hora com a Lightning Network
-
-            O processo de cadastro é simples e gratuito, e nossa equipe oferece todo o suporte necessário.
-
-            Você gostaria de saber mais sobre como implementar essa solução no seu estabelecimento?
-
-            Estou à disposição para ajudar!
-          </div>
-        </div>
-
-        <div class="whatsapp-message">
-          <div class="whatsapp-message-header">
-            <div class="whatsapp-message-title">Terceiro Dia - Proposta de Visita</div>
-            <button class="copy-button" onclick="copyToClipboard('message3')">
-              <i class="fas fa-copy"></i> Copiar
-            </button>
-          </div>
-          <div id="message3" class="whatsapp-message-content">Olá! Como vai?
-
-            Estou acompanhando alguns estabelecimentos em Carambeí que já começaram a aceitar Bitcoin, e os resultados
-            têm sido muito positivos!
-
-            Gostaria de propor uma visita ao seu estabelecimento para:
-
-            1. Demonstrar como funciona o pagamento em Bitcoin na prática
-            2. Ajudar no cadastro do seu negócio no mapa Bitcoin
-            3. Configurar uma carteira digital segura para receber pagamentos
-            4. Realizar a primeira compra em Bitcoin como demonstração
-            5. Entregar o adesivo "Aceita Bitcoin?" para seu estabelecimento
-
-            Tudo isso sem nenhum custo e com suporte contínuo da nossa equipe.
-
-            Qual seria o melhor dia e horário para essa visita?
-
-            Aguardo seu retorno e estou à disposição para qualquer dúvida!
-          </div>
-        </div>
-      </div>
-
-      <!-- Aba de Materiais para Impressão -->
-            <!-- Aba de Materiais para Impressão -->
-      <div id="print" class="tab-content">
-        <h3>Materiais para Impressão</h3>
-        <p>Baixe e imprima estes materiais para ajudar na divulgação do projeto "Aceita Bitcoin?".</p>
-      
-        <div class="material-card">
-          <div class="material-card-header">
-            <h4 class="material-card-title">Adesivo "Aceita Bitcoin?"</h4>
-          </div>
-          <div class="material-card-content">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Adesivo Aceita Bitcoin?" class="material-preview">
-            <div class="material-card-description">
-              Logo do projeto "Aceita Bitcoin?" para ser utilizado em adesivos, cartazes e outros materiais de
-              divulgação. Formato 22,5cm x 10cm.
-            </div>           
-          </div>
-          <div class="material-card-footer">
-            <span>Formato: JPG | Tamanho: 30cm x 7,75cm</span>
-            <a href="{{ url_for('static', filename='downloads/materiais_adesivo_AceitaBTC.png') }}" class="download-button" download>
-              <i class="fas fa-download"></i> Baixar
-            </a>
-          </div>
-        </div>
-      
-        <div class="material-card">
-          <div class="material-card-header">
-            <h4 class="material-card-title">Adesivo Entrada</h4>
-          </div>
-          <div class="material-card-content">
-            <img src="{{ url_for('static', filename='img/material_adesivo_aceit_btc_1200_310.png') }}" alt="Adesivo Aceita Bitcoin?" class="material-preview">
-            <div class="material-card-description">
-              Adesivo para ser colocado na entrada do estabelecimento, indicando que o local aceita pagamentos em
-              Bitcoin. Formato 30cm x 7,75cm.
-            </div>            
-          </div>
-          <div class="material-card-footer">
-            <span>Formato: JPG | Tamanho: 30cm x 7,75cm</span>
-            <a href="{{ url_for('static', filename='downloads/material_adesivo_aceit_btc_1200_310.png') }}" class="download-button" download>
-              <i class="fas fa-download"></i> Baixar
-            </a>
-          </div>
-        </div>
-      
-        <div class="material-card">
-          <div class="material-card-header">
-            <h4 class="material-card-title">Folder Informe 01</h4>
-          </div>
-          <div class="material-card-content">
-            <img src="{{ url_for('static', filename='img/material_folder_capa_AceitaBTC01__1000x500.png') }}" alt="Folder Informativo" class="material-preview">
-            <div class="material-card-description">
-              Folder com informações sobre o projeto "Aceita Bitcoin?" e os benefícios de aceitar pagamentos em Bitcoin.
-              Inclui instruções para começar e carteiras recomendadas.
-            </div>
-          </div>
-          <div class="material-card-footer">
-            <span>Formato: png | Tamanho: 800x2000 px</span>
-            <a href="{{ url_for('static', filename='downloads/material_folder_AceitaBTC01_1000x2400.png') }}" class="download-button" download>
-              <i class="fas fa-download"></i> Baixar
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Aba de Casos de Sucesso -->
-      <div id="case-studies" class="tab-content">
-        <h3>Casos de Sucesso</h3>
-        <p>Conheça histórias reais de cidades e estabelecimentos que adotaram o Bitcoin como forma de pagamento.</p>
-
-        <div class="case-study">
-          <div class="case-study-header">
-            <div class="case-study-icon">
-              <i class="fas fa-mug-hot"></i>
-            </div>
-            <h4 class="case-study-title">Primeira Adoção em Carambeí — Frederica’s Coffee Huis ☕⚡</h4>
-          </div>
-          <div class="case-study-content">
-            <p>A Frederica’s Coffee Huis, conhecida por suas deliciosas tortas e ambiente acolhedor, foi o ponto de partida
-              ideal. Os proprietários já conheciam algo sobre o Bitcoin, o que abriu portas para uma conversa
-              tranquila e direta sobre o projeto. Sem receios, toparam experimentar a nova forma de pagamento.</p>
-            
-            <p>Seguindo as instruções do projeto de Rolante-RS, instalamos juntos uma carteira compatível com a
-              Lightning Network. Tudo muito simples. E no dia seguinte, 17/04/2025, com minha esposa, fomos até lá 
-              para prestigiar a casa: um bom café, tortas maravilhosas e uma experiência que marcou o início de 
-              uma nova etapa.</p>
-
-            <p>Na hora de pagar, entreguei o adesivo "Aceitamos Bitcoin!" para a operadora do caixa e realizamos o
-              pagamento com satoshis. Foi rápido, fácil e com taxas mínimas. A reação? Um sorriso genuíno e a surpresa              
-              com a simplicidade do processo.</p>
-
-            <p>Na época, o Bitcoin estava com cotação mais baixa — e o mais curioso é que, desde então, o proprietário
-              vem acompanhando seu saldo se valorizar. Está animado e segue recebendo em BTC, tanto na matriz de              
-              Carambeí quanto na nova filial em Ponta Grossa.</p>
-
-            <p>Foi um primeiro passo pequeno, mas cheio de significado. Prova de que a confiança vem da prática e que
-              a adoção começa com relações próximas, boa vontade e curiosidade por algo novo.</p>
-
-            <div class="case-study-stats">
-              <div class="case-study-stat">
-                <div class="case-study-stat-value">na</div>
-                <div class="case-study-stat-label">Estabelecimentos</div>
-              </div>
-              <div class="case-study-stat">
-                <div class="case-study-stat-value">na</div>
-                <div class="case-study-stat-label">Aumento no faturamento</div>
-              </div>
-              <div class="case-study-stat">
-                <div class="case-study-stat-value">na</div>
-                <div class="case-study-stat-label">Transações mensais</div>
-              </div>
-              <div class="case-study-stat">
-                <div class="case-study-stat-value">na</div>
-                <div class="case-study-stat-label">Aumento no turismo</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-       
-      </div>
-
-      <!-- Aba de Apostilas e Recursos -->
-      <div id="resources" class="tab-content">
-        <h3>Apostilas e Recursos Educativos</h3>
-        <p>Materiais educativos para aprender mais sobre Bitcoin e como implementá-lo em estabelecimentos comerciais.
+{% block content %}
+  <section class="hero-section compact-hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Materiais</span>
+        <h1 class="headline">Tudo o que ajuda a converter uma conversa em ativação local.</h1>
+        <p class="lead">
+          Aqui ficam os recursos que mais ajudam na rua: mensagens de abordagem, peças para impressão e materiais de apoio para orientar a conversa.
         </p>
+      </div>
+      <aside class="hero-card">
+        <span class="card-kicker">Objetivo</span>
+        <h2 class="hero-card-title">Dar mais previsibilidade para quem está indo ao campo abordar estabelecimentos.</h2>
+      </aside>
+    </div>
+  </section>
 
-        <div class="resources-grid">
-          <div class="resource-card">
-            <div class="resource-card-header">
-              <h4 class="resource-card-title">Apostila: Bitcoin para Comerciantes</h4>
-            </div>
-            <div class="resource-card-content">
-              <div class="resource-card-description">
-                Guia completo sobre como implementar pagamentos em Bitcoin em estabelecimentos comerciais, com
-                explicações detalhadas e exemplos práticos.
-              </div>
-            </div>
-            <div class="resource-card-footer">
-              <span>PDF | 49 páginas</span>
-              <a href="{{ url_for('static', filename='downloads/material_apostila_bitcoin_para_comerciantes.pdf') }}" class="download-button" download>
-                <i class="fas fa-download"></i> Baixar
-              </a>
-            </div>
-          </div>
+  <section class="page-panel">
+    <div class="tabs" data-tabs>
+      <div class="tab-nav" role="tablist" aria-label="Materiais">
+        <button type="button" class="tab-trigger is-active" data-tab-trigger="mensagens">Mensagens</button>
+        <button type="button" class="tab-trigger" data-tab-trigger="downloads">Downloads</button>
+        <button type="button" class="tab-trigger" data-tab-trigger="biblioteca">Biblioteca</button>
+      </div>
 
-          <div class="resource-card">
-            <div class="resource-card-header">
-              <h4 class="resource-card-title">Manual: Lightning Network</h4>
-            </div>
-            <div class="resource-card-content">
-              <div class="resource-card-description">
-                Tudo sobre a Lightning Network, a tecnologia que permite pagamentos instantâneos e com taxas mínimas em
-                Bitcoin. Classificação dos grupos de usuários. Em qual grupo você se encaixa?
+      <div class="tab-panel is-active" data-tab-panel="mensagens">
+        <div class="card-grid">
+          {% for message in whatsapp_messages %}
+            <article class="message-card">
+              <div class="message-card-header">
+                <h3>{{ message.title }}</h3>
+                <button type="button" class="copy-button" data-copy-target="{{ message.id }}">Copiar</button>
               </div>
-            </div>
-            <div class="resource-card-footer">
-              <span>PDF | 27 páginas</span>
-              <a href="{{ url_for('static', filename='downloads/material_manual_lightning_network.pdf') }}" class="download-button" download>
-                <i class="fas fa-download"></i> Baixar
-              </a>
-            </div>
-          </div>          
-
-          <div class="resource-card">
-            <div class="resource-card-header">
-              <h4 class="resource-card-title">Vídeo: Como Receber Pagamentos em Bitcoin</h4>
-            </div>
-            <div class="resource-card-content">
-              <div class="resource-card-description">
-                Em breve!                 Tutorial em vídeo mostrando na prática como receber pagamentos em Bitcoin em um estabelecimento
-                comercial.
-              </div>
-            </div>
-            <div class="resource-card-footer">
-              <span>MP4 | 5 min</span>
-              <a href="{{ url_for('static', filename='downloads/tutorial-pagamentos.mp4') }}" class="download-button" download>
-                <i class="fas fa-download"></i> Baixar
-              </a>
-            </div>
-          </div>
-
-          <div class="resource-card">
-            <div class="resource-card-header">
-              <h4 class="resource-card-title">Planilha: Controle de Pagamentos</h4>
-            </div>
-            <div class="resource-card-content">
-              <div class="resource-card-description">
-                Em breve! Planilha para controle de pagamentos recebidos em Bitcoin, com cálculo automático de valores em reais.
-              </div>
-            </div>
-            <div class="resource-card-footer">
-              <span>Excel | Planilha interativa</span>
-              <a href="{{ url_for('static', filename='downloads/planilha-controle.xlsx') }}" class="download-button" download>
-                <i class="fas fa-download"></i> Baixar
-              </a>
-            </div>
-          </div>
+              <pre id="{{ message.id }}" class="message-content">{{ message.content }}</pre>
+            </article>
+          {% endfor %}
         </div>
       </div>
-    </section>
-  </main>
 
-  <div id="footer-placeholder"></div>
+      <div class="tab-panel" data-tab-panel="downloads">
+        <div class="card-grid">
+          {% for item in material_downloads %}
+            <article class="resource-card">
+              <img src="{{ url_for('static', filename=item.preview) }}" alt="{{ item.title }}" class="resource-preview">
+              <div class="resource-body">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+                <p class="muted-text">{{ item.format }} | {{ item.size }}</p>
+                <a href="{{ url_for('static', filename=item.file) }}" class="btn btn-secondary" download>Baixar arquivo</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </div>
 
-  <script>
-    function openTab(evt, tabName) {
-      var i, tabcontent, tabbuttons;
+      <div class="tab-panel" data-tab-panel="biblioteca">
+        <div class="card-grid">
+          {% for item in resource_library %}
+            <article class="resource-card simple-card">
+              <div class="resource-body">
+                <span class="pill">{{ item.format }}</span>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+                <a href="{{ url_for('static', filename=item.file) }}" class="btn btn-secondary" download>Abrir material</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
 
-      // Esconde todos os conteúdos de abas
-      tabcontent = document.getElementsByClassName("tab-content");
-      for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
-      }
+  <section class="page-grid">
+    <article class="page-panel">
+      <span class="section-kicker">Caso prático</span>
+      <h2 class="section-heading">Material e visita precisam andar juntos</h2>
+      <p class="muted-text">
+        O adesivo sozinho não resolve. O valor real aparece quando a visita, a explicação e o primeiro pagamento
+        acontecem em sequência. O material deve funcionar como apoio à ativação, não como substituto dela.
+      </p>
+    </article>
 
-      // Remove a classe "active" de todos os botões
-      tabbuttons = document.getElementsByClassName("tab-button");
-      for (i = 0; i < tabbuttons.length; i++) {
-        tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
-      }
-
-      // Mostra o conteúdo da aba atual e adiciona a classe "active" ao botão
-      document.getElementById(tabName).style.display = "block";
-      evt.currentTarget.className += " active";
-    }
-
-    function copyToClipboard(elementId) {
-      const text = document.getElementById(elementId).innerText;
-      navigator.clipboard.writeText(text).then(function () {
-        alert("Mensagem copiada para a área de transferência!");
-      }, function () {
-        alert("Não foi possível copiar a mensagem. Por favor, tente novamente.");
-      });
-    }
-  </script>
-  <script src="{{ url_for('static', filename='js/load-header-and-footer.js') }}"></script>
-  
-</body>
-
-</html>
+    <aside class="hero-card">
+      <img src="{{ url_for('static', filename='img/materiais_sucesso_fredericas.png') }}" alt="Aplicação de material em estabelecimento" class="support-image">
+    </aside>
+  </section>
+{% endblock %}

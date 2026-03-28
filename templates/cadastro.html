@@ -1,239 +1,114 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "base.html" %}
 
-<head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZQVS83N61C"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZQVS83N61C');
-    </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de Estabelecimento - Aceita Bitcoin?</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cadastro.css') }}">
-</head>
+{% block content %}
+  <section class="page-grid">
+    <article class="page-panel form-panel">
+      <span class="section-kicker">Cadastro</span>
+      <h1 class="section-heading">Adicionar um estabelecimento ao projeto</h1>
+      <p class="lead">
+        Preencha os dados essenciais para organizar a ativação, registrar o local publicamente e preparar a próxima etapa com o comerciante.
+      </p>
 
-<body>
-  <!-- Modal de Confirmação -->
-  <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title" id="confirmationModalLabel"><i class="fas fa-check-circle me-2"></i> Sucesso!</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div id="formFeedback" class="message-box" hidden></div>
+
+      <form id="cadastroForm" class="stack-form" enctype="multipart/form-data">
+        <div class="form-two-columns">
+          <label class="field">
+            <span>Nome do estabelecimento *</span>
+            <input type="text" id="nomeEstabelecimento" name="nome" value="{{ prefill.nome }}" required>
+          </label>
+          <label class="field">
+            <span>Tipo *</span>
+            <select id="tipoEstabelecimento" name="tipo" required>
+              <option value="">Selecione</option>
+              <option value="restaurant" {% if prefill.tipo == 'restaurant' %}selected{% endif %}>Restaurante</option>
+              <option value="cafe" {% if prefill.tipo == 'cafe' %}selected{% endif %}>Café</option>
+              <option value="bar" {% if prefill.tipo == 'bar' %}selected{% endif %}>Bar</option>
+              <option value="hotel" {% if prefill.tipo == 'hotel' %}selected{% endif %}>Hotel</option>
+              <option value="shop" {% if prefill.tipo == 'shop' %}selected{% endif %}>Loja</option>
+              <option value="supermarket" {% if prefill.tipo == 'supermarket' %}selected{% endif %}>Supermercado</option>
+              <option value="bakery" {% if prefill.tipo == 'bakery' %}selected{% endif %}>Padaria</option>
+              <option value="pharmacy" {% if prefill.tipo == 'pharmacy' %}selected{% endif %}>Farmácia</option>
+              <option value="healthcare" {% if prefill.tipo == 'healthcare' %}selected{% endif %}>Saúde</option>
+              <option value="rental" {% if prefill.tipo == 'rental' %}selected{% endif %}>Serviços e locação</option>
+              <option value="other" {% if prefill.tipo == 'other' %}selected{% endif %}>Outro</option>
+            </select>
+          </label>
         </div>
-        <div class="modal-body">
-          <p class="mb-0">Estabelecimento cadastrado com sucesso! Em breve seu estabelecimento estará inscrito no
-            Bitcoin Map.</p>
+
+        <label class="field">
+          <span>Endereço *</span>
+          <input type="text" id="endereco" name="endereco" value="{{ prefill.endereco }}" required>
+        </label>
+
+        <div class="form-two-columns">
+          <label class="field">
+            <span>E-mail</span>
+            <input type="email" id="email" name="email" value="{{ prefill.email }}">
+          </label>
+          <label class="field">
+            <span>Telefone</span>
+            <input type="tel" id="telefone" name="telefone" placeholder="+55 43 99999-9999">
+          </label>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="goToHomeBtn">Voltar para a página
-            inicial</button>
+
+        <div class="form-two-columns">
+          <label class="field">
+            <span>Website</span>
+            <input type="url" id="website" name="website" placeholder="https://">
+          </label>
+          <label class="field">
+            <span>Data da verificação</span>
+            <input type="date" id="checkDate" name="data_verificacao" value="{{ default_check_date }}">
+          </label>
         </div>
+
+        <label class="field">
+          <span>Logo do estabelecimento</span>
+          <input type="file" id="logoEstabelecimento" name="logo" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+        </label>
+
+        <fieldset class="choice-group">
+          <legend>Quais formas de recebimento estão ativas?</legend>
+          <label class="choice-item">
+            <input type="checkbox" id="acceptsLightning" name="aceita_lightning">
+            <span>Lightning</span>
+          </label>
+          <label class="choice-item">
+            <input type="checkbox" id="acceptsOnchain" name="aceita_onchain">
+            <span>On-chain</span>
+          </label>
+          <label class="choice-item">
+            <input type="checkbox" id="acceptsLightningContactless" name="aceita_contactless">
+            <span>Lightning contactless</span>
+          </label>
+        </fieldset>
+
+        <label class="field">
+          <span>Observações</span>
+          <textarea id="observacoes" name="observacoes" rows="5" placeholder="Contexto do onboarding, detalhes operacionais, necessidade de visita, observações úteis para o time."></textarea>
+        </label>
+
+        <div class="action-row">
+          <button type="submit" class="btn btn-cta">Salvar cadastro</button>
+          <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver diretório</a>
+        </div>
+      </form>
+    </article>
+
+    <aside class="hero-card">
+      <span class="card-kicker">Depois do cadastro</span>
+      <h2 class="hero-card-title">O objetivo é tirar o local do estado de interesse e levar para o estado de operação.</h2>
+      <ul class="feature-list">
+        <li>Centralizar os dados do estabelecimento.</li>
+        <li>Registrar o tipo de recebimento disponível.</li>
+        <li>Preparar a publicação pública do local.</li>
+        <li>Organizar uma eventual visita de ativação.</li>
+      </ul>
+      <div class="notice-box">
+        <strong>Recomendação prática</strong>
+        <p>Se possível, valide o fluxo de cobrança junto com a equipe antes de divulgar o local como ativo para o público.</p>
       </div>
-    </div>
-  </div>
-  <div id="header-placeholder"></div>
-  <div class="container">
-    <div class="page-header">
-      <h1>Cadastrar Estabelecimento que Aceita Bitcoin</h1>
-      <p>Ajude a expandir a rede de estabelecimentos que aceitam Bitcoin em sua região</p>
-    </div>
-
-    <div id="feedbackSuccess" class="feedback-message feedback-success"
-      style="display: none; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-      <i class="fas fa-check-circle me-2"></i> Estabelecimento cadastrado com sucesso!
-    </div>
-    <div id="feedbackError" class="feedback-message feedback-error" style="display: none;">
-      <i class="fas fa-exclamation-circle me-2"></i> Erro ao cadastrar estabelecimento. Verifique os dados e tente
-      novamente.
-    </div>
-    <div id="feedbackInfo" class="feedback-message feedback-info" style="display: none;">
-      <i class="fas fa-info-circle me-2"></i> Verificando informações...
-    </div>
-
-    <!-- Por que cadastrar seu estabelecimento? -->
-    <div class="benefits-section">
-      <h2 class="mb-4">Por que cadastrar seu estabelecimento?</h2>
-      <div class="row">
-        <div class="col-md-6 mb-4">
-          <div class="card benefit-card h-100">
-            <div class="card-body text-center">
-              <div class="benefit-icon">
-                <i class="fas fa-globe"></i>
-              </div>
-              <h3 class="h5">Visibilidade Global</h3>
-              <p>Seu estabelecimento será visível para usuários de Bitcoin em todo o mundo através do BTC Map.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 mb-4">
-          <div class="card benefit-card h-100">
-            <div class="card-body text-center">
-              <div class="benefit-icon">
-                <i class="fas fa-rocket"></i>
-              </div>
-              <h3 class="h5">Posicionamento Inovador</h3>
-              <p>Destaque-se da concorrência ao adotar tecnologias financeiras inovadoras.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Indicador de Passos -->
-    <!-- Formulário de Cadastro -->
-    <div id="cadastro-content">
-      <div class="card">
-        <div class="card-header">
-          <i class="fas fa-store me-2"></i> Cadastro de Estabelecimento
-        </div>
-        <div class="card-body">
-          <form id="cadastroForm">
-            <div class="mb-3">
-              <label for="nomeEstabelecimento" class="form-label">Nome do Estabelecimento *</label>
-              <input type="text" class="form-control" id="nomeEstabelecimento" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="tipoEstabelecimento" class="form-label">Tipo de Estabelecimento *</label>
-              <select class="form-select" id="tipoEstabelecimento" required>
-                <option value="" selected disabled>Selecione...</option>
-                <option value="restaurant">Restaurante</option>
-                <option value="cafe">Café</option>
-                <option value="bar">Bar</option>
-                <option value="hotel">Hotel</option>
-                <option value="shop">Loja</option>
-                <option value="supermarket">Supermercado</option>
-                <option value="bakery">Padaria</option>
-                <option value="pharmacy">Farmácia</option>
-                <option value="healthcare">Serviços de Saúde</option>
-                <option value="rental">Aluguel</option>
-                <option value="other">Outro</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="logoEstabelecimento" class="form-label">Logo do Estabelecimento</label>
-              <input type="file" class="form-control" id="logoEstabelecimento" accept="image/*">
-              <div class="form-text">Faça upload do logo do seu estabelecimento (opcional). Formatos aceitos: JPG, PNG,
-                GIF.</div>
-            </div>
-
-            <div class="mb-3">
-              <label for="endereco" class="form-label">Endereço *</label>
-              <input type="text" class="form-control" id="endereco" required>
-            </div>
-
-            <!-- Métodos de Pagamento Bitcoin -->
-            <div class="bitcoin-payment-section mb-4">
-              <h3 class="bitcoin-payment-title">
-                <i class="fab fa-bitcoin"></i> Métodos de Pagamento Bitcoin
-              </h3>
-
-              <div class="mb-3">
-                <div class="d-flex flex-wrap mb-3">
-                  <span class="tag-badge tag-xbt">currency:XBT=yes</span>
-                  <span class="tag-badge tag-lightning">payment:lightning</span>
-                  <span class="tag-badge tag-onchain">payment:onchain</span>
-                  <span class="tag-badge tag-contactless">payment:lightning_contactless</span>
-                </div>
-
-                <p class="form-text mb-3">
-                  Estas tags são utilizadas pelo BTC Map para identificar estabelecimentos que aceitam Bitcoin.
-                  Selecione todas as opções aplicáveis ao seu estabelecimento.
-                </p>
-
-                <div class="form-check mb-2">
-                  <input class="form-check-input" type="checkbox" id="acceptsBitcoin" checked disabled>
-                  <label class="form-check-label" for="acceptsBitcoin">
-                    <strong>Aceita Bitcoin</strong>
-                  </label>
-                </div>
-
-                <div class="form-check mb-2">
-                  <input class="form-check-input" type="checkbox" id="acceptsLightning">
-                  <label class="form-check-label" for="acceptsLightning">
-                    <strong>Aceita Lightning Network</strong>
-                  </label>
-                </div>
-
-                <div class="form-check mb-2">
-                  <input class="form-check-input" type="checkbox" id="acceptsOnchain">
-                  <label class="form-check-label" for="acceptsOnchain">
-                    <strong>Aceita On-chain</strong>
-                  </label>
-                </div>
-
-                <div class="form-check mb-3">
-                  <input class="form-check-input" type="checkbox" id="acceptsLightningContactless">
-                  <label class="form-check-label" for="acceptsLightningContactless">
-                    <strong>Aceita Lightning Contactless</strong>
-                  </label>
-                </div>
-
-                <div class="mb-3">
-                  <label for="checkDate" class="form-label">Data de Verificação</label>
-                  <input type="date" class="form-control" id="checkDate">
-                  <div class="form-text">Data em que a aceitação de Bitcoin foi verificada
-                    (check_date:currency:XBT=YYYY-MM-DD)</div>
-                </div>
-
-                <div class="form-check mb-2" style="display: none;">
-                  <input class="form-check-input" type="checkbox" id="sourceAquiAceitaBitcoin" checked disabled>
-                  <label class="form-check-label" for="sourceAquiAceitaBitcoin">
-                    <strong>Cadastrado através do projeto "Aceita Bitcoin?"</strong>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="email" class="form-label">Email de Contato (opcional)</label>
-              <input type="email" class="form-control" id="email">
-            </div>
-
-            <div class="mb-3">
-              <label for="telefone" class="form-label">Telefone de Contato (opcional)</label>
-              <input type="tel" class="form-control" id="telefone">
-            </div>
-
-            <div class="mb-3">
-              <label for="website" class="form-label">Website (opcional)</label>
-              <input type="url" class="form-control" id="website" placeholder="https://...">
-            </div>
-
-            <div class="mb-4">
-              <label for="observacoes" class="form-label">Observações (opcional)</label>
-              <textarea class="form-control" id="observacoes" rows="3"></textarea>
-            </div>
-
-            <div class="row mt-4">
-              <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-save me-2"></i> Cadastrar Estabelecimento
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="footer-placeholder"></div>
-  <script src="{{ url_for('static', filename='js/load-header-and-footer.js') }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/prefill_cadastro.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/form_submit.js') }}"></script>
-  
-</body>
-
-</html>
+    </aside>
+  </section>
+{% endblock %}

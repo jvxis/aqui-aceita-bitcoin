@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <meta name="description" content="{{ page_description }}">
+  <meta name="robots" content="index,follow">
+  <meta name="author" content="BRLN">
+  <meta name="theme-color" content="#08111f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ site_name }}">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ page_description }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ social_image_url }}">
+  <meta property="og:locale" content="pt_BR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ page_description }}">
+  <meta name="twitter:image" content="{{ social_image_url }}">
+  <link rel="canonical" href="{{ request.url }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "{{ site_name }}",
+      "url": "{{ site_url }}",
+      "logo": "{{ social_image_url }}",
+      "sameAs": [
+        "https://br-ln.com/",
+        "https://services.br-ln.com/",
+        "https://www.instagram.com/brln_club",
+        "https://x.com/brln_club"
+      ]
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "{{ site_name }}",
+      "url": "{{ site_url }}"
+    }
+  </script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="page-{{ page }}">
+  <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+
+  <div class="site-shell">
+    {% include 'partials/header.html' %}
+
+    <main id="main-content" class="page-shell">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% include 'partials/footer.html' %}
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

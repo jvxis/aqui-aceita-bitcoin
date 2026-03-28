@@ -1,0 +1,33 @@
+<header class="site-header">
+  <div class="nav-bar">
+    <a href="{{ url_for('serve_index') }}" class="brand-block" aria-label="Aceita Bitcoin? - início">
+      <span class="brand-mark">
+        <img src="{{ url_for('static', filename='img/logo_aceita_bitcoin_pino1_wht.png') }}" alt="Aceita Bitcoin?">
+      </span>
+      <span class="brand-copy">
+        <strong>Aceita Bitcoin?</strong>
+        <small>Projeto local conectado ao ecossistema BRLN</small>
+      </span>
+    </a>
+
+    <nav class="nav-links" aria-label="Principal">
+      {% for item in site_nav %}
+        <a href="{{ url_for(item.endpoint) }}" class="{% if request.endpoint == item.endpoint %}is-active{% endif %}">{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="nav-actions">
+      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar local</a>
+      <button id="menu-toggle" class="menu-toggle-btn" type="button" aria-controls="mobile-nav" aria-expanded="false" aria-label="Abrir menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </div>
+
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Menu mobile" hidden>
+    {% for item in site_nav %}
+      <a href="{{ url_for(item.endpoint) }}" class="{% if request.endpoint == item.endpoint %}is-active{% endif %}">{{ item.label }}</a>
+    {% endfor %}
+    <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar local</a>
+  </nav>
+</header>

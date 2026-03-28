@@ -1,299 +1,97 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "base.html" %}
 
-<head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZQVS83N61C"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZQVS83N61C');
-    </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sobre o Projeto - Aceita Bitcoin?</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/sobre.css') }}">
-</head>
-
-<body>
-  <div id="header-placeholder"></div>
-
-  <main>
-    <div class="sobre-container">
-      <h1 class="section-title">Sobre o Projeto</h1>
-      <p class="section-subtitle">Conheça a história e os objetivos do "Aceita Bitcoin?"</p>
-
-      <div class="intro-section">
-        <div class="intro-content">
-          <h2 class="intro-title">Nossa Missão</h2>
-          <p class="intro-text">
-            Inspirado pelo sucesso do projeto “Bitcoin é Aqui”, de Rolante–RS — que já conta com mais de 200
-            cidade que aceitam Bitcoin, nosso projeto "Aceita Bitcoin?", é um projeto Open Source, que 
-            visa difundir Bitcoin como meio de pagamento em estabelecimentos comerciais do Brasil.
-            
-          </p>
-          <p class="intro-text">
-            Nossa meta com o Aceita Bitcoin? é animar mais pessoas a criarem projetos similares ao de Rolante,
-            estabelecimentos aceitando Bitcoin como forma de pagamento — o projeto “Aceita Bitcoin?” nasce com
-            eo propósito de expandir essa ideia por todo o Brasil.
-            Nosso objetivo é promover o uso do Bitcoin como uma moeda forte e funcional no dia a dia, oferecendo
-            suporte, materiais e incentivo para que entusiastas locais possam implementar iniciativas semelhantes em
-            suas cidades. Acreditamos na força da colaboração e na troca de experiências para construir, juntos, uma
-            nova economia descentralizada e acessível.
-          </p>
-          <p class="intro-text">
-            Acreditamos que a adoção do Bitcoin como meio de pagamento é um passo importante para a inclusão financeira
-            e para o desenvolvimento econômico local, permitindo que pequenos negócios tenham acesso a um sistema
-            financeiro global, sem intermediários e com taxas reduzidas.
-          </p>
-        </div>
-        <div class="intro-image">
-          <img src="{{ url_for('static', filename='img/bitcoin-adoption.png') }}" alt="Adoção de Bitcoin">
-        </div>
-      </div>
-
-      <div class="stats-container">
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-store"></i>
-          </div>
-          <div class="stat-value">04</div>
-          <div class="stat-label">Estabelecimentos</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-city"></i>
-          </div>
-          <div class="stat-value">3</div>
-          <div class="stat-label">Cidades</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-exchange-alt"></i>
-          </div>
-          <div class="stat-value">NA</div>
-          <div class="stat-label">Transações Mensais</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="stat-value">NA</div>
-          <div class="stat-label">Crescimento Mensal</div>
-        </div>
-      </div>
-
-      <h2 class="section-title" id="como-funciona">Como Funciona</h2>
-
-      <div class="bitcoin-info">
-        <h3 class="bitcoin-info-title">O que é Bitcoin?</h3>
-        <p class="intro-text" style="text-align: center; max-width: 800px; margin: 0 auto 30px;">
-          Bitcoin é uma moeda digital descentralizada que permite transações peer-to-peer sem a necessidade de
-          intermediários como bancos ou instituições financeiras. Criada em 2009, é a primeira e mais valiosa
-          criptomoeda do mundo.
+{% block content %}
+  <section class="hero-section compact-hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Projeto</span>
+        <h1 class="headline">Uma frente prática para transformar curiosidade sobre Bitcoin em operação real no comércio local.</h1>
+        <p class="lead">
+          O Aceita Bitcoin? existe para reduzir o espaço entre teoria e execução: apresentar a proposta, ajudar no setup
+          e deixar o estabelecimento pronto para comunicar e receber.
         </p>
-
-        <div class="bitcoin-features">
-          <div class="bitcoin-feature">
-            <div class="bitcoin-feature-title">
-              <i class="fas fa-lock"></i>
-              <span>Segurança</span>
-            </div>
-            <p class="bitcoin-feature-text">
-              O Bitcoin utiliza criptografia avançada para garantir a segurança das transações. A tecnologia blockchain
-              registra todas as transações de forma transparente e imutável, tornando o sistema extremamente seguro
-              contra fraudes.
-            </p>
-          </div>
-
-          <div class="bitcoin-feature">
-            <div class="bitcoin-feature-title">
-              <i class="fas fa-bolt"></i>
-              <span>Lightning Network</span>
-            </div>
-            <p class="bitcoin-feature-text">
-              A Lightning Network é uma tecnologia de segunda camada que permite transações instantâneas e com taxas
-              mínimas. É ideal para pagamentos do dia a dia em estabelecimentos comerciais, tornando o Bitcoin tão
-              prático quanto um cartão de débito.
-            </p>
-          </div>
-
-          <div class="bitcoin-feature">
-            <div class="bitcoin-feature-title">
-              <i class="fas fa-globe"></i>
-              <span>Global</span>
-            </div>
-            <p class="bitcoin-feature-text">
-              O Bitcoin é uma moeda global que pode ser enviada e recebida em qualquer lugar do mundo, sem restrições de
-              fronteiras ou controles governamentais. Isso abre novas possibilidades para negócios locais alcançarem
-              clientes internacionais.
-            </p>
-          </div>
-        </div>
       </div>
+      <aside class="hero-card">
+        <span class="card-kicker">Base</span>
+        <h2 class="hero-card-title">O projeto se apoia no ecossistema BRLN para dar mais consistência à frente comercial e educativa.</h2>
+      </aside>
+    </div>
+  </section>
 
-      <h2 class="section-title">Nossa História</h2>
-
-      <div class="timeline-container">
-        <div class="timeline-line"></div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-date">Janeiro 2025</div>
-          <div class="timeline-content">
-            <h3 class="timeline-title">Início do Projeto</h3>
-            <p class="timeline-text">
-              O projeto "Aceita Bitcoin?" foi fundado pelo Clube BR⚡LN com o objetivo de difundir o uso de Bitcoin como
-              meio de pagamento em estabelecimentos comerciais, além oferecer suporte, materiais e incentivo para que
-              entusiastas locais.
-            </p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-date">Fevereiro 2025</div>
-          <div class="timeline-content">
-            <h3 class="timeline-title">Primeiros Estabelecimentos</h3>
-            <p class="timeline-text">
-              O primeiro estabelecimento, Frederica´s, Coffie Huis, começou a
-              aceitar Bitcoin como forma de pagamento, marcando o início
-              oficial da adoção na região.
-            </p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-date">Março 2025</div>
-          <div class="timeline-content">
-            <h3 class="timeline-title">Início do desenvolvimento do site</h3>
-            <p class="timeline-text">
-              O projeto expandiu com o início do desenvolvimento do site "Aceita Bitcoin?", 
-              que visa facilitar o cadastro de cafés e lojas de varejo.
-            </p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-date">Abril 2025</div>
-          <div class="timeline-content">
-            <h3 class="timeline-title">Nome e identidade visual </h3>
-            <p class="timeline-text">
-              Foi definido oficialmente o nome do projeto e desenvolvida sua identidade visual.
-            </p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-date">Maio 2024</div>
-          <div class="timeline-content">
-            <h3 class="timeline-title">Lançamento do site</h3>
-            <p class="timeline-text">
-              Lançamento do site com funcionalidades básicas, incluindo cadastro de
-              estabelecimentos e informações sobre como aceitar Bitcoin. Além de materiais
-              educativos para ajudar os entusiastas na implantação do projeto em outras cidades.
-            </p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-date">Futuro</div>
-          <div class="timeline-content">
-            <h3 class="timeline-title">Melhorias e Expansão</h3>
-            <p class="timeline-text">
-              O projeto está em constante evolução, com melhorias planejadas para o site e a adição de novos
-              recursos, como integração com o Bitcoin Maps.            
-            </p>
-          </div>
-        </div>
+  <section class="metric-strip standalone-strip">
+    {% for stat in about_stats %}
+      <div class="metric-card">
+        <strong>{{ stat.value }}</strong>
+        <span>{{ stat.label }}</span>
       </div>
+    {% endfor %}
+  </section>
 
-      <h2 class="section-title">Nossa Equipe</h2>
+  <section class="page-grid">
+    <article class="page-panel">
+      <span class="section-kicker">Missão</span>
+      <h2 class="section-heading">Ajudar grupos locais a ativarem Bitcoin com menos improviso.</h2>
+      <p class="muted-text">
+        Isso inclui narrativa de abordagem, indicação de carteira, material visual, organização de cadastro e uma presença
+        digital que transmita mais profissionalismo. A plataforma funciona como peça operacional da iniciativa, não apenas
+        como vitrine.
+      </p>
+    </article>
 
-      <div class="team-container">
-        <div class="team-members">
-          <div class="team-member">
-            <img src="{{ url_for('static', filename='img/team-member1.jpg') }}" alt="Membro da Equipe" class="team-member-image">
-            <div class="team-member-name">Jaime >
-            <div class="team-member-role">Fundador e Desenvolvedor</div>
-            <div class="team-member-bio">
-              Entusiasta de Bitcoin desde os primórdios, Jaime lidera o projeto Clube BR⚡LN, unindo sua paixão por
-              tecnologia e educação financeira para fortalecer a adoção do Bitcoin no Brasil.
-            </div>
-            <div class="team-member-social">
-              <a href="#"><i class="fab fa-twitter"></i></a>
-              <a href="#"><i class="fab fa-linkedin"></i></a>
-              <a href="#"><i class="fab fa-github"></i></a>
-            </div>
+    <aside class="hero-card">
+      <img src="{{ url_for('static', filename='img/bitcoin-adoption.png') }}" alt="Adoção de Bitcoin" class="support-image">
+    </aside>
+  </section>
+
+  <section class="page-panel">
+    <span class="section-kicker">Linha do tempo</span>
+    <h2 class="section-heading">Marcos do projeto</h2>
+    <div class="timeline-list">
+      {% for item in timeline %}
+        <article class="timeline-item">
+          <span class="timeline-period">{{ item.period }}</span>
+          <div>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.text }}</p>
           </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
 
-          <div class="team-member">
-            <img src="{{ url_for('static', filename='img/team-member2.jpg') }}" alt="Membro da Equipe" class="team-member-image">
-            <div class="team-member-name">Dennis Verschoor</div>
-            <div class="team-member-role">Idealizador e Coordenador</div>
-            <div class="team-member-bio">
-              Dennis é o idealizador do projeto "Aceita Bitcoin?" dentro do Clube BR⚡LN. Responsável pelo
-              projeto Aceita Bitcoin? @Carambeí-PR.
-                          
-            </div>
-            <div class="team-member-social">
-              <a href="#"><i class="fab fa-twitter"></i></a>
-              <a href="#"><i class="fab fa-linkedin"></i></a>
-              <a href="#"><i class="fab fa-instagram"></i></a>
-            </div>
-          </div>
-
-          <div class="team-member">
-            <img src="{{ url_for('static', filename='img/team-member3.jpg') }}" alt="Membro da Equipe" class="team-member-image">
-            <div class="team-member-name">Rodrigo</div>
-            <div class="team-member-role">Desenvolvedor</div>
-            <div class="team-member-bio">
-              Rodrigo é o desenvolvedor por trás do site e das integrações técnicas com o BTC Maps e outras plataformas.
-            </div>
-            <div class="team-member-social">
-              <a href="#"><i class="fab fa-twitter"></i></a>
-              <a href="#"><i class="fab fa-github"></i></a>
-              <a href="#"><i class="fab fa-linkedin"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="cta-section">
-        <h2 class="cta-title">Faça Parte da Revolução Bitcoin</h2>
-        <p class="cta-text">
-          Junte-se a nós nessa jornada para transformar a forma como fazemos pagamentos. Cadastre seu estabelecimento,
-          crie sua carteira Bitcoin e comece a aceitar a moeda do futuro hoje mesmo.
-        </p>
-        <div class="cta-buttons">
-          <a href="{{ url_for('serve_index') }}#cadastro-rapido" class="cta-button">
-            <i class="fas fa-store"></i> Cadastrar Estabelecimento
-          </a>
-          <a href="{{ url_for('serve_carteiras') }}" class="cta-button">
-            <i class="fas fa-wallet"></i> Criar Carteira Bitcoin
-          </a>
-          <a href="mailto:contato@clubebrln.org" class="cta-button secondary">
-            <i class="fas fa-envelope"></i> Entre em Contato
-          </a>
-        </div>
+  <section class="page-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Casos piloto</span>
+        <h2 class="section-heading">Operações que ajudam a dar referência ao projeto</h2>
       </div>
     </div>
-  </main>
+    <div class="card-grid">
+      {% for establishment in pilot_establishments %}
+        <article class="resource-card simple-card">
+          <div class="resource-body">
+            <span class="pill">{{ establishment.type_label }}</span>
+            <h3>{{ establishment.name }}</h3>
+            <p>{{ establishment.excerpt }}</p>
+            <p class="muted-text">{{ establishment.city_label }}</p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
 
-  <div id="footer-placeholder"></div>
-  <script src="{{ url_for('static', filename='js/load-header-and-footer.js') }}"></script>
-
-</body>
-
-</html>
+  <section class="page-panel">
+    <span class="section-kicker">Equipe</span>
+    <h2 class="section-heading">Estrutura enxuta, com foco em execução</h2>
+    <div class="team-grid">
+      {% for member in team %}
+        <article class="team-card">
+          <div class="avatar">{{ member.name[0] }}</div>
+          <h3>{{ member.name }}</h3>
+          <span class="role-label">{{ member.role }}</span>
+          <p>{{ member.bio }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

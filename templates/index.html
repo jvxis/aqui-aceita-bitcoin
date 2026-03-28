@@ -1,233 +1,193 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "base.html" %}
 
-<head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZQVS83N61C"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZQVS83N61C');
-    </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aceita Bitcoin? - Clube BR⚡LN</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/btcmap-flags.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% block content %}
+  <section class="hero-section">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Ativação comercial • onboarding local • Bitcoin e Lightning no balcão</span>
+        <h1 class="headline">Ajude estabelecimentos a aceitarem Bitcoin com um fluxo claro, prático e replicável.</h1>
+        <p class="lead">
+          O projeto existe para tirar a adoção do campo da teoria. Em vez de só falar sobre Bitcoin, ele organiza
+          abordagem, cadastro, carteira, material visual e a primeira venda real no estabelecimento.
+        </p>
+        <div class="hero-actions">
+          <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Começar cadastro</a>
+          <a href="{{ url_for('serve_materiais') }}" class="btn btn-secondary">Ver materiais</a>
+        </div>
+        <div class="trust-row">
+          <span>Fluxo de ativação local</span>
+          <span>Materiais prontos para uso</span>
+          <span>Ecossistema BRLN como base</span>
+        </div>
+        <div class="metric-strip">
+          {% for stat in project_stats %}
+            <div class="metric-card">
+              <strong>{{ stat.value }}</strong>
+              <span>{{ stat.label }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
 
-</head>
+      <aside class="hero-card">
+        <span class="card-kicker">Para quem serve</span>
+        <h2 class="hero-card-title">Uma base útil para comunidades locais, comerciantes e quem está liderando a adoção na prática.</h2>
+        <ul class="feature-list">
+          <li>Comerciantes que querem testar recebimentos com baixo atrito.</li>
+          <li>Comunidades locais que precisam de uma página séria para apresentar a iniciativa.</li>
+          <li>Voluntários e organizadores que fazem onboarding em campo.</li>
+          <li>Pessoas que precisam de material para explicar, ativar e acompanhar.</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
 
-<body>
-  <div id="header-placeholder"></div>
+  <section class="page-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Como funciona</span>
+        <h2 class="section-heading">Um fluxo simples para ativar um comércio local</h2>
+      </div>
+    </div>
 
-  <main class="container">
-    <section class="hero" style="padding: 30px 20px;">
-      <h1>Aceita Bitcoin?</h1>
-      <p>
-        Tão simples quanto um PIX, tão revolucionário quanto a internet.<br>
-        Não é só para nerds. É para todos. É para você.
+    <div class="steps-grid">
+      <article class="step-card">
+        <span class="step-index">01</span>
+        <h3>Mapear o local</h3>
+        <p>Coletar nome, endereço, tipo de negócio, canais de contato e formato de recebimento desejado.</p>
+      </article>
+      <article class="step-card">
+        <span class="step-index">02</span>
+        <h3>Configurar a carteira</h3>
+        <p>Escolher a carteira adequada para o perfil do negócio e validar o processo de cobrança no balcão.</p>
+      </article>
+      <article class="step-card">
+        <span class="step-index">03</span>
+        <h3>Fazer a ativação</h3>
+        <p>Entregar material visual, orientar a equipe e registrar o local como parte da iniciativa.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="page-grid">
+    <article class="page-panel">
+      <span class="section-kicker">O que o projeto entrega</span>
+      <h2 class="section-heading">Um stack simples para tirar a aceitação de Bitcoin do improviso</h2>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <p>Cadastro centralizado para registrar locais, contatos e meios de recebimento.</p>
+        </div>
+        <div class="benefit-card">
+          <p>Página de materiais com mensagens prontas, peças visuais e biblioteca de apoio.</p>
+        </div>
+        <div class="benefit-card">
+          <p>Diretório público para mostrar prova social e ajudar novos usuários a encontrarem pontos ativos.</p>
+        </div>
+      </div>
+    </article>
+
+    <aside class="hero-card">
+      <span class="card-kicker">Ponto de partida</span>
+      <h2 class="hero-card-title">{{ public_count }} cadastros públicos no banco hoje.</h2>
+      <p class="muted-text">
+        Enquanto a base pública ainda cresce, os casos piloto ajudam a mostrar que o projeto já tem lastro e pode ser
+        expandido com mais consistência.
       </p>
-        </section>
+    </aside>
+  </section>
 
-    <!-- Seção de passos simplificados -->
-    <section class="steps-container">
-      <div class="steps-title">
-        <h2>Comece em 3 passos simples</h2>
-        <p>Faça parte da revolução Bitcoin e aumente a visibilidade do seu negócio</p>
+  <section class="page-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Casos piloto</span>
+        <h2 class="section-heading">Alguns pontos já conectados à iniciativa</h2>
       </div>
+      <a href="{{ url_for('serve_estabelecimentos') }}" class="inline-link">Ver diretório público</a>
+    </div>
 
-      <div class="steps-flow">
-        <div class="step-item">
-          <div class="step-number">1</div>
-          <div class="step-icon">
-            <i class="fas fa-store-alt"></i>
+    <div class="card-grid">
+      {% for establishment in featured_establishments %}
+        <article class="establishment-card">
+          <div class="establishment-logo-wrap">
+            <img src="{{ establishment.logo_url }}" alt="{{ establishment.name }}" class="establishment-logo">
           </div>
-          <div class="step-title">Cadastre o estabelecimento</div>
-          <div class="step-description">
-            Cadastre seu negócio agora e vamos ajudá-lo a colocar sua empresa no mapa do Bitcoin!
+          <div class="establishment-body">
+            <span class="pill">{{ establishment.type_label }}</span>
+            <h3>{{ establishment.name }}</h3>
+            <p>{{ establishment.excerpt or establishment.address }}</p>
+            <div class="meta-row">
+              <span><i class="fa-solid fa-location-dot"></i> {{ establishment.city_label }}</span>
+            </div>
+            <div class="badge-row">
+              {% if establishment.accepts_lightning %}<span class="payment-badge is-lightning">Lightning</span>{% endif %}
+              {% if establishment.accepts_onchain %}<span class="payment-badge is-onchain">On-chain</span>{% endif %}
+              {% if establishment.accepts_contactless %}<span class="payment-badge is-contactless">Contactless</span>{% endif %}
+            </div>
           </div>
-          <div class="d-flex justify-content-center mt-3">
-            <a href="{{ url_for('serve_cadastro') }}" class="cta-button">
-              <i class="fas fa-arrow-right"></i> Cadastrar agora
-            </a>
-          </div>
-        </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
 
-        <div class="step-item">
-          <div class="step-number">2</div>
-          <div class="step-icon">
-            <i class="fas fa-wallet"></i>
-          </div>
-          <div class="step-title">Crie sua carteira Bitcoin</div>
-          <div class="step-description">
-            Configure uma carteira Bitcoin segura para receber pagamentos instantaneamente.
-          </div>
-          <div class="d-flex justify-content-center mt-3">
-            <a href="{{ url_for('serve_carteiras') }}" class="cta-button">
-              <i class="fas fa-arrow-right"></i> Criar carteira
-            </a>
-          </div>
-        </div>
-
-        <div class="step-item">
-          <div class="step-number">3</div>
-          <div class="step-icon">
-            <i class="fas fa-qrcode"></i>
-          </div>
-          <div class="step-title">Comece a aceitar Bitcoin<br></div>
-          <div class="step-description">
-            Exiba o adesivo, divulgue nas redes sociais "Aceita Bitcoin?" e comece a receber pagamentos.
-          </div>
-          <div class="d-flex justify-content-center mt-3">
-            <a href="{{ url_for('serve_materiais') }}" class="cta-button">
-              <i class="fas fa-arrow-right"></i> Obter materiais
-            </a>
-          </div>
-        </div>
+  <section class="page-grid">
+    <article class="page-panel map-panel">
+      <span class="section-kicker">Mapa</span>
+      <h2 class="section-heading">BTC Map como ponto de descoberta</h2>
+      <p class="muted-text">
+        O mapa continua relevante, mas agora entra como apoio à conversão, não como bloco solto no meio da página.
+      </p>
+      <div class="map-shell">
+        <iframe class="map-frame" src="https://btcmap.org/map#10/-24.9/-50.1" title="BTC Map" loading="lazy" allowfullscreen></iframe>
       </div>
-    </section>
+    </article>
 
-    <section>
-      <h2 class="section-title">Bitcoin Maps</h2>
-      <p class="section-subtitle">Encontre estabelecimentos que aceitam Bitcoin</p>
-
-      <!-- BTC Map oficial via iframe com zoom inicial para Carambeí, Telêmaco Borba e Ponta Grossa -->
-      <div class="btcmap-container">
-        <iframe class="btcmap-iframe" src="https://btcmap.org/map#10/-24.9/-50.1" allowfullscreen></iframe>
-      </div>
-    </section>
-
-    <!-- Estabelecimentos em destaque -->
-    <section class="featured-establishments">
-      <h3>Estabelecimentos em Destaque</h3>
-      <div class="establishment-cards">
-        <div class="establishment-card">
-          <div class="establishment-image" style="background-image: url('{{ url_for('static', filename='img/fredericas.jpg') }}')"></div>
-          <div class="establishment-details">
-            <h4 class="establishment-name">Frederica's Koffiehuis</h4>
-            <span class="establishment-category">Café</span>
-            <div class="establishment-address">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>Avenida dos Pioneiros, 1010, Carambeí, PR</span>
-            </div>
-            <div class="establishment-payment">
-              <span class="payment-method lightning">
-                <i class="fas fa-bolt"></i> Lightning
-              </span>
-              <span class="payment-method onchain">
-                <i class="fab fa-bitcoin"></i> On-chain
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="establishment-card">
-          <div class="establishment-image" style="background-image: url('{{ url_for('static', filename='img/dr-adrian-gomez.jpg') }}')"></div>
-          <div class="establishment-details">
-            <h4 class="establishment-name">Dr. Adrian Gómez Collantes</h4>
-            <span class="establishment-category">Serviços de Saúde</span>
-            <div class="establishment-address">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>Rua Ouro Branco, 426, Carambeí, PR</span>
-            </div>
-            <div class="establishment-payment">
-              <span class="payment-method lightning">
-                <i class="fas fa-bolt"></i> Lightning
-              </span>
-              <span class="payment-method onchain">
-                <i class="fab fa-bitcoin"></i> On-chain
-              </span>
-              <span class="payment-method contactless">
-                <i class="fas fa-wifi"></i> Contactless
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="establishment-card">
-          <div class="establishment-image" style="background-image: url('{{ url_for('static', filename='img/deltad.jpg') }}')"></div>
-          <div class="establishment-details">
-            <h4 class="establishment-name">DeltaD Engenharia e Locações</h4>
-            <span class="establishment-category">Aluguel</span>
-            <div class="establishment-address">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>Avenida dos Pioneiros, 00, Carambeí, PR</span>
-            </div>
-            <div class="establishment-payment">
-              <span class="payment-method lightning">
-                <i class="fas fa-bolt"></i> Lightning
-              </span>
-              <span class="payment-method onchain">
-                <i class="fab fa-bitcoin"></i> On-chain
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Formulário de cadastro rápido -->
-    <section id="cadastro-rapido" class="quick-form">
-      <h3>Cadastro Rápido</h3>
-      <form id="quickForm">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="nomeEstabelecimento">Nome do Estabelecimento</label>
-            <input type="text" id="nomeEstabelecimento" name="nome" placeholder="Ex: Café Colonial Frederica's"
-              required>
-          </div>
-          <div class="form-group">
-            <label for="tipoEstabelecimento">Tipo de Estabelecimento</label>
-            <select id="tipoEstabelecimento" name="tipo" required>
-              <option value="" selected disabled>Selecione...</option>
-              <option value="restaurant">Restaurante</option>
-              <option value="cafe">Café</option>
-              <option value="bar">Bar</option>
-              <option value="hotel">Hotel</option>
-              <option value="shop">Loja</option>
-              <option value="supermarket">Supermercado</option>
-              <option value="bakery">Padaria</option>
-              <option value="pharmacy">Farmácia</option>
-              <option value="healthcare">Serviços de Saúde</option>
-              <option value="rental">Aluguel</option>
-              <option value="other">Outro</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="endereco">Endereço</label>
-            <input type="text" id="endereco" name="endereco" placeholder="Ex: Avenida dos Pioneiros, 1010, Carambeí, PR"
-              required>
-          </div>
-          <div class="form-group">
-            <label for="email">Email de Contato</label>
-            <input type="email" id="email" name="email" placeholder="Ex: contato@seuestablecimento.com.br">
-          </div>
-        </div>
-        <div class="row mt-4">
-          <div class="col-12 d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary" style="width: auto; max-width: 300px;">
-              <i class="fas fa-paper-plane me-2"></i> Continuar Cadastro
-            </button>
-          </div>
-        </div>
+    <aside class="hero-card">
+      <span class="card-kicker">Próxima ação</span>
+      <h2 class="hero-card-title">Pré-cadastro rápido</h2>
+      <form action="{{ url_for('serve_cadastro') }}" method="get" class="stack-form">
+        <label class="field">
+          <span>Nome do estabelecimento</span>
+          <input type="text" name="nome" placeholder="Ex.: Frederica's Koffiehuis" required>
+        </label>
+        <label class="field">
+          <span>Tipo</span>
+          <select name="tipo" required>
+            <option value="">Selecione</option>
+            <option value="restaurant">Restaurante</option>
+            <option value="cafe">Café</option>
+            <option value="bar">Bar</option>
+            <option value="hotel">Hotel</option>
+            <option value="shop">Loja</option>
+            <option value="supermarket">Supermercado</option>
+            <option value="bakery">Padaria</option>
+            <option value="pharmacy">Farmácia</option>
+            <option value="healthcare">Saúde</option>
+            <option value="rental">Serviços e locação</option>
+            <option value="other">Outro</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Endereço</span>
+          <input type="text" name="endereco" placeholder="Rua, número, cidade, UF" required>
+        </label>
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" name="email" placeholder="contato@empresa.com">
+        </label>
+        <button type="submit" class="btn btn-cta btn-full">Continuar no formulário completo</button>
       </form>
-    </section>
-  </main>
+    </aside>
+  </section>
 
-  <div id="footer-placeholder"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/index_dynamic.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/quickForm.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/btcmap-flag-manager.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/load-header-and-footer.js') }}"></script>
-
-</body>
-
-</html>
+  <section class="page-panel cta-band">
+    <div>
+      <span class="section-kicker">Próximo passo</span>
+      <h2 class="section-heading">Se a meta é colocar mais um comércio no mapa, o fluxo começa pelo cadastro.</h2>
+      <p class="muted-text">Cadastre o local, organize a abordagem e use os materiais para conduzir a primeira ativação.</p>
+    </div>
+    <div class="hero-actions">
+      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar agora</a>
+      <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver diretório</a>
+    </div>
+  </section>
+{% endblock %}

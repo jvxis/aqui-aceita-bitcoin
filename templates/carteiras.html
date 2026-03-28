@@ -1,373 +1,86 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "base.html" %}
 
-<head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZQVS83N61C"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-ZQVS83N61C');
-    </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carteiras Bitcoin - Aceita Bitcoin?</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/carteiras.css') }}">
-</head>
-
-<body>
-  <div id="header-placeholder"></div>
-
-  <main>
-    <div class="wallet-container">
-      <h1 class="section-title">Carteiras Bitcoin</h1>
-      <p class="section-subtitle">Escolha uma carteira para começar a aceitar pagamentos em Bitcoin</p>
-
-      <div class="wallet-cards">
-        <div class="wallet-card">
-          <div class="wallet-header">
-            <img src="{{ url_for('static', filename='img/logo_coinos.png') }}" alt="Coinos" class="wallet-logo">
-            <div class="wallet-name">Coinos</div>
-            <div class="wallet-type">Web & Mobile</div>
-          </div>
-          <div class="wallet-body">
-            <p class="wallet-description">
-              Coinos é uma carteira web e mobile que permite receber pagamentos em Bitcoin através da Lightning Network
-              de forma simples e rápida.
-            </p>
-            <div class="wallet-features">
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Fácil de usar</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Pagamentos instantâneos</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Sem taxas de recebimento</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Disponível para Android e iOS</span>
-              </div>
-            </div>
-            <div class="wallet-cta">
-              <a href="https://coinos.io/" target="_blank" class="wallet-button">
-                <i class="fas fa-external-link-alt"></i> Criar Carteira
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div class="wallet-card">
-          <div class="wallet-header">
-            <img src="{{ url_for('static', filename='img/logo_wos.png') }}" alt="Wallet of Satoshi" class="wallet-logo">
-            <div class="wallet-name">Wallet of Satoshi</div>
-            <div class="wallet-type">Mobile</div>
-          </div>
-          <div class="wallet-body">
-            <p class="wallet-description">
-              Wallet of Satoshi é uma carteira mobile extremamente simples e intuitiva, perfeita para quem está
-              começando com Bitcoin.
-            </p>
-            <div class="wallet-features">
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Interface intuitiva</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Configuração em segundos</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Suporte a Lightning Network</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Disponível para Android e iOS</span>
-              </div>
-            </div>
-            <div class="wallet-cta">
-              <a href="https://www.walletofsatoshi.com/" target="_blank" class="wallet-button">
-                <i class="fas fa-external-link-alt"></i> Criar Carteira
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div class="wallet-card">
-          <div class="wallet-header">
-            <img src="{{ url_for('static', filename='img/logo_strike.png') }}" alt="Strike" class="wallet-logo">
-            <div class="wallet-name">Strike</div>
-            <div class="wallet-type">Mobile</div>
-          </div>
-          <div class="wallet-body">
-            <p class="wallet-description">
-              Strike é uma carteira mobile que permite enviar e receber Bitcoin globalmente com taxas mínimas e de forma
-              instantânea.
-            </p>
-            <div class="wallet-features">
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Transferências globais</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Taxas quase zero</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Pagamentos instantâneos</span>
-              </div>
-              <div class="wallet-feature">
-                <i class="fas fa-check-circle"></i>
-                <span>Disponível para Android e iOS</span>
-              </div>
-            </div>
-            <div class="wallet-cta">
-              <a href="https://strike.me/" target="_blank" class="wallet-button">
-                <i class="fas fa-external-link-alt"></i> Criar Carteira
-              </a>
-            </div>
-          </div>
-        </div>
+{% block content %}
+  <section class="hero-section compact-hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Carteiras</span>
+        <h1 class="headline">Escolha uma carteira compatível com o nível de operação do seu estabelecimento.</h1>
+        <p class="lead">
+          Em vez de listar tudo, a ideia aqui é ajudar a escolher com critério: velocidade de onboarding, nível de custódia
+          e adequação ao uso no caixa.
+        </p>
       </div>
-
-      <div class="steps-container">
-        <div class="steps-title">
-          <h2>Como criar sua carteira Bitcoin</h2>
-          <p>Siga este guia passo a passo para configurar sua carteira e começar a aceitar pagamentos em Bitcoin</p>
-        </div>
-
-        <div class="wallet-step">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <div class="step-title">Escolha uma carteira</div>
-            <div class="step-description">
-              Selecione uma das carteiras recomendadas acima. Para iniciantes, recomendamos a Wallet of Satoshi pela sua
-              simplicidade. Clique no botão "Criar Carteira" para acessar o site oficial.
-            </div>
-          </div>
-        </div>
-
-        <div class="wallet-step">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            <div class="step-title">Baixe o aplicativo</div>
-            <div class="step-description">
-              Na página oficial da carteira escolhida, baixe o aplicativo para seu smartphone (Android ou iOS). Você
-              encontrará links para as lojas de aplicativos ou um QR code para escanear.
-            </div>
-          </div>
-        </div>
-
-        <div class="wallet-step">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            <div class="step-title">Crie sua conta</div>
-            <div class="step-description">
-              Abra o aplicativo e siga as instruções para criar uma nova conta. Geralmente, você precisará fornecer um
-              e-mail e criar uma senha. Algumas carteiras podem solicitar informações adicionais para segurança.
-            </div>
-          </div>
-        </div>
-
-        <div class="wallet-step">
-          <div class="step-number">4</div>
-          <div class="step-content">
-            <div class="step-title">Faça backup da sua carteira</div>
-            <div class="step-description">
-              Este é um passo crucial! Anote e guarde em local seguro as palavras-chave ou códigos de recuperação
-              fornecidos durante a configuração. Eles são essenciais para recuperar sua carteira caso você perca acesso
-              ao dispositivo.
-            </div>
-          </div>
-        </div>
-
-        <div class="wallet-step">
-          <div class="step-number">5</div>
-          <div class="step-content">
-            <div class="step-title">Comece a aceitar pagamentos</div>
-            <div class="step-description">
-              Sua carteira está pronta! Para receber pagamentos, basta abrir o aplicativo, selecionar a opção "Receber"
-              ou "Gerar QR Code", definir o valor (opcional) e mostrar o QR code para o cliente escanear com a carteira
-              dele.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <h2 class="section-title">Comparativo de Carteiras</h2>
-
-      <table class="comparison-table">
-        <thead>
-          <tr>
-            <th>Recurso</th>
-            <th>Coinos</th>
-            <th>Wallet of Satoshi</th>
-            <th>Strike</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Facilidade de uso</td>
-            <td>⭐⭐⭐⭐</td>
-            <td>⭐⭐⭐⭐⭐</td>
-            <td>⭐⭐⭐⭐</td>
-          </tr>
-          <tr>
-            <td>Lightning Network</td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-          </tr>
-          <tr>
-            <td>Pagamentos On-chain</td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-times"></i></td>
-          </tr>
-          <tr>
-            <td>Versão Web</td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-times"></i></td>
-            <td><i class="fas fa-times"></i></td>
-          </tr>
-          <tr>
-            <td>Android</td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-          </tr>
-          <tr>
-            <td>iOS</td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-            <td><i class="fas fa-check"></i></td>
-          </tr>
-          <tr>
-            <td>Taxas de recebimento</td>
-            <td>Baixas</td>
-            <td>Baixas</td>
-            <td>Quase zero</td>
-          </tr>
-          <tr>
-            <td>Ideal para</td>
-            <td>Usuários intermediários</td>
-            <td>Iniciantes</td>
-            <td>Transferências globais</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="faq-container">
-        <h2 class="section-title">Perguntas Frequentes</h2>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            O que é uma carteira Bitcoin?
-            <i class="fas fa-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>Uma carteira Bitcoin é um aplicativo ou dispositivo que armazena as chaves privadas necessárias para
-              acessar e gerenciar seus bitcoins. Ela permite que você envie, receba e armazene bitcoins de forma segura.
-            </p>
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            O que é Lightning Network?
-            <i class="fas fa-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>Lightning Network é uma tecnologia de segunda camada construída sobre o Bitcoin que permite transações
-              instantâneas e com taxas extremamente baixas. É ideal para pagamentos do dia a dia em estabelecimentos
-              comerciais.</p>
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            É seguro usar essas carteiras?
-            <i class="fas fa-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>Sim, as carteiras recomendadas são seguras e amplamente utilizadas pela comunidade Bitcoin. No entanto, é
-              fundamental seguir as boas práticas de segurança, como fazer backup das palavras-chave e usar senhas
-              fortes.</p>
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            Preciso pagar para criar uma carteira?
-            <i class="fas fa-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>Não, todas as carteiras recomendadas são gratuitas para criar e usar. Existem apenas pequenas taxas de
-              rede ao realizar transações, que são mínimas na Lightning Network.</p>
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            Como recebo pagamentos no meu estabelecimento?
-            <i class="fas fa-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>Para receber pagamentos, basta abrir sua carteira, selecionar a opção "Receber" ou "Gerar QR Code",
-              definir o valor a ser cobrado (opcional) e mostrar o QR code gerado para o cliente escanear com a carteira
-              dele. O pagamento será confirmado instantaneamente na Lightning Network.</p>
-          </div>
-        </div>
-      </div>
+      <aside class="hero-card">
+        <span class="card-kicker">Referência prática</span>
+        <h2 class="hero-card-title">A melhor carteira é a que a equipe realmente consegue usar sem travar o atendimento.</h2>
+      </aside>
     </div>
-  </main>
+  </section>
 
-  <div id="footer-placeholder"></div>
+  <section class="card-grid">
+    {% for wallet in wallets %}
+      <article class="wallet-card">
+        <span class="pill">{{ wallet.badge }}</span>
+        <h2>{{ wallet.name }}</h2>
+        <p>{{ wallet.summary }}</p>
+        <p class="muted-text"><strong>Melhor encaixe:</strong> {{ wallet.fit }}</p>
+        <ul class="feature-list compact-list">
+          {% for item in wallet.highlights %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+        <a href="{{ wallet.url }}" target="_blank" rel="noopener" class="btn btn-secondary">Abrir site oficial</a>
+      </article>
+    {% endfor %}
+  </section>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // FAQ accordion functionality
-      const faqQuestions = document.querySelectorAll('.faq-question');
+  <section class="page-panel">
+    <span class="section-kicker">Implementação</span>
+    <h2 class="section-heading">Critério simples para decidir</h2>
+    <div class="steps-grid">
+      <article class="step-card">
+        <span class="step-index">01</span>
+        <h3>Quer velocidade?</h3>
+        <p>Priorize uma carteira com onboarding rápido e baixa fricção para treinamento inicial do caixa.</p>
+      </article>
+      <article class="step-card">
+        <span class="step-index">02</span>
+        <h3>Quer mais soberania?</h3>
+        <p>Escolha uma opção com autocustódia e aceite lidar com mais responsabilidade operacional.</p>
+      </article>
+      <article class="step-card">
+        <span class="step-index">03</span>
+        <h3>Quer validar no balcão?</h3>
+        <p>Faça uma compra-teste real antes de anunciar para clientes que o local aceita Bitcoin.</p>
+      </article>
+    </div>
+  </section>
 
-      faqQuestions.forEach(question => {
-        question.addEventListener('click', function () {
-          const answer = this.nextElementSibling;
-          const isActive = answer.classList.contains('active');
+  <section class="page-grid">
+    <article class="page-panel faq-panel">
+      <span class="section-kicker">Perguntas rápidas</span>
+      <h2 class="section-heading">FAQ essencial para o time comercial</h2>
+      <div class="faq-stack">
+        <details>
+          <summary>Preciso recomendar uma única carteira para todo mundo?</summary>
+          <p>Não. O ideal é oferecer uma recomendação principal para onboarding e uma segunda opção para quem quer mais controle.</p>
+        </details>
+        <details>
+          <summary>Lightning é obrigatório?</summary>
+          <p>Para operação de balcão, Lightning costuma ser a melhor experiência. On-chain pode coexistir como opção complementar.</p>
+        </details>
+        <details>
+          <summary>Vale treinar a equipe antes da divulgação?</summary>
+          <p>Sim. O material visual só deve ir para a vitrine depois que o fluxo de cobrança tiver sido testado.</p>
+        </details>
+      </div>
+    </article>
 
-          // Close all answers
-          document.querySelectorAll('.faq-answer').forEach(item => {
-            item.classList.remove('active');
-          });
-
-          // Toggle current answer
-          if (!isActive) {
-            answer.classList.add('active');
-          }
-
-          // Update icons
-          document.querySelectorAll('.faq-question i').forEach(icon => {
-            icon.className = 'fas fa-chevron-down';
-          });
-
-          if (!isActive) {
-            this.querySelector('i').className = 'fas fa-chevron-up';
-          }
-        });
-      });
-    });
-  </script>
-  <script src="{{ url_for('static', filename='js/load-header-and-footer.js') }}"></script>
-  
-</body>
-
-</html>
+    <aside class="hero-card">
+      <span class="card-kicker">Próxima etapa</span>
+      <h2 class="hero-card-title">Depois de definir a carteira, registre o local e organize a ativação pública.</h2>
+      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar estabelecimento</a>
+    </aside>
+  </section>
+{% endblock %}

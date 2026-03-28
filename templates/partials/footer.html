@@ -1,0 +1,38 @@
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-card">
+      <h3>Aceita Bitcoin?</h3>
+      <p>Frente de ativação comercial com visual, onboarding e suporte alinhados ao padrão BRLN.</p>
+      <div class="social-row">
+        {% for item in site_social_links %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener" aria-label="{{ item.label }}">
+            <i class="{{ item.icon }}"></i>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="footer-card">
+      <h3>Links rápidos</h3>
+      <ul class="footer-list">
+        {% for item in site_footer_links %}
+          <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="footer-card">
+      <h3>Contato</h3>
+      <ul class="footer-list">
+        <li><a href="mailto:suporte.brln@gmail.com">suporte.brln@gmail.com</a></li>
+        <li><a href="https://www.instagram.com/brln_club" target="_blank" rel="noopener">@brln_club</a></li>
+        <li>Brasil</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© {{ current_year }} Aceita Bitcoin? / BRLN</span>
+    <span>Feito para ativação local com Bitcoin e Lightning.</span>
+  </div>
+</footer>
