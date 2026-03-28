@@ -319,6 +319,7 @@ pre {
 .wallet-card,
 .resource-card,
 .message-card,
+.team-card,
 .site-footer,
 .empty-state,
 .message-box {
@@ -939,7 +940,9 @@ textarea {
 }
 
 .team-card {
+  padding: 24px;
   align-content: start;
+  grid-template-rows: auto auto auto 1fr;
 }
 
 .avatar {

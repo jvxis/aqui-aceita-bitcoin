@@ -122,6 +122,9 @@ function initCopyButtons() {
 function initCadastroForm() {
   const form = document.getElementById("cadastroForm");
   const feedback = document.getElementById("formFeedback");
+  const submitButton = form?.querySelector('button[type="submit"]');
+  const defaultButtonLabel = submitButton?.textContent ?? "";
+  let isSubmitting = false;
 
   if (!form || !feedback) {
     return;
@@ -130,23 +133,23 @@ function initCadastroForm() {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const formData = new FormData();
-    formData.append("nome", document.getElementById("nomeEstabelecimento").value);
-    formData.append("tipo", document.getElementById("tipoEstabelecimento").value);
-    formData.append("endereco", document.getElementById("endereco").value);
-    formData.append("email", document.getElementById("email").value);
-    formData.append("telefone", document.getElementById("telefone").value);
-    formData.append("website", document.getElementById("website").value);
-    formData.append("observacoes", document.getElementById("observacoes").value);
-    formData.append("data_verificacao", document.getElementById("checkDate").value);
-    formData.append("aceita_lightning", String(document.getElementById("acceptsLightning").checked));
-    formData.append("aceita_onchain", String(document.getElementById("acceptsOnchain").checked));
-    formData.append("aceita_contactless", String(document.getElementById("acceptsLightningContactless").checked));
-
-    const logo = document.getElementById("logoEstabelecimento").files[0];
-    if (logo) {
-      formData.append("logo", logo);
+    if (isSubmitting) {
+      return;
     }
+
+    isSubmitting = true;
+    feedback.hidden = true;
+    feedback.textContent = "";
+    form.setAttribute("aria-busy", "true");
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Salvando...";
+    }
+
+    const formData = new FormData(form);
+    formData.set("aceita_lightning", String(document.getElementById("acceptsLightning").checked));
+    formData.set("aceita_onchain", String(document.getElementById("acceptsOnchain").checked));
+    formData.set("aceita_contactless", String(document.getElementById("acceptsLightningContactless").checked));
 
     try {
       const response = await fetch("/api/estabelecimentos", {
@@ -154,7 +157,16 @@ function initCadastroForm() {
         body: formData,
       });
 
-      const result = await response.json();
+      const responseText = await response.text();
+      let result = {};
+
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          result = {};
+        }
+      }
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Não foi possível salvar o cadastro.");
       }
@@ -166,6 +178,82 @@ function initCadastroForm() {
     } catch (error) {
       showMessage(feedback, "error", error.message || "Erro ao enviar o cadastro.");
       feedback.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+}
+
+function initCadastroFormV2() {
+  const form = document.getElementById("cadastroForm");
+  const feedback = document.getElementById("formFeedback");
+  const submitButton = form?.querySelector('button[type="submit"]');
+  const defaultButtonLabel = submitButton?.textContent ?? "";
+  let isSubmitting = false;
+
+  if (!form || !feedback) {
+    return;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
+
+    isSubmitting = true;
+    feedback.hidden = true;
+    feedback.textContent = "";
+    form.setAttribute("aria-busy", "true");
+
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Salvando...";
+    }
+
+    const formData = new FormData(form);
+    formData.set("aceita_lightning", String(document.getElementById("acceptsLightning").checked));
+    formData.set("aceita_onchain", String(document.getElementById("acceptsOnchain").checked));
+    formData.set("aceita_contactless", String(document.getElementById("acceptsLightningContactless").checked));
+
+    try {
+      const response = await fetch("/api/estabelecimentos", {
+        method: "POST",
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      let result = {};
+
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          result = {};
+        }
+      }
+
+      if (!response.ok || !result.success) {
+        const fallbackMessage =
+          response.status === 413
+            ? "Arquivo excede o limite de 5 MB."
+            : "Nao foi possivel salvar o cadastro.";
+        throw new Error(result.message || fallbackMessage);
+      }
+
+      showMessage(feedback, "success", result.message);
+      form.reset();
+      document.getElementById("checkDate").value = new Date().toISOString().split("T")[0];
+      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+      showMessage(feedback, "error", error.message || "Erro ao enviar o cadastro.");
+      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
+    } finally {
+      isSubmitting = false;
+      form.removeAttribute("aria-busy");
+
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = defaultButtonLabel;
+      }
     }
   });
 }
@@ -257,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initMobileMenu();
   initTabs();
   initCopyButtons();
-  initCadastroForm();
+  initCadastroFormV2();
   initDirectory();
   initReveal();
 });

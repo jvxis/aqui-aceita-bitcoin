@@ -1,6 +1,8 @@
 from datetime import datetime
 import os
 import sqlite3
+from urllib.parse import urlparse
+from uuid import uuid4
 
 import dotenv
 from flask import Flask, jsonify, redirect, render_template, request, url_for
@@ -18,7 +20,7 @@ CORS(app)
 DB_FILE_PATH = dotenv.get_key(".env", "DB_FILE_PATH") or "database.db"
 PORT = int(dotenv.get_key(".env", "PORT") or os.getenv("PORT") or 5000)
 UPLOAD_FOLDER = os.path.join(app.static_folder, "logos")
-ALLOWED_LOGO_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "svg"}
+ALLOWED_LOGO_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 TYPE_LABELS = {
@@ -35,6 +37,22 @@ TYPE_LABELS = {
     "education": "Educação",
     "other": "Outro",
 }
+
+SUBMISSION_TYPE_OPTIONS = [
+    {"value": "restaurant", "label": TYPE_LABELS["restaurant"]},
+    {"value": "cafe", "label": TYPE_LABELS["cafe"]},
+    {"value": "bar", "label": TYPE_LABELS["bar"]},
+    {"value": "hotel", "label": TYPE_LABELS["hotel"]},
+    {"value": "shop", "label": TYPE_LABELS["shop"]},
+    {"value": "supermarket", "label": TYPE_LABELS["supermarket"]},
+    {"value": "bakery", "label": TYPE_LABELS["bakery"]},
+    {"value": "pharmacy", "label": TYPE_LABELS["pharmacy"]},
+    {"value": "healthcare", "label": TYPE_LABELS["healthcare"]},
+    {"value": "rental", "label": TYPE_LABELS["rental"]},
+    {"value": "other", "label": TYPE_LABELS["other"]},
+]
+SUBMISSION_TYPE_VALUES = {item["value"] for item in SUBMISSION_TYPE_OPTIONS}
+ALLOWED_WEBSITE_SCHEMES = {"http", "https"}
 
 SITE_NAV = [
     {"endpoint": "serve_index", "label": "Início"},
@@ -282,6 +300,12 @@ def init_db():
             )
             """
         )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_estabelecimentos_lookup
+            ON estabelecimentos (tipo, nome, endereco)
+            """
+        )
         conn.commit()
 
 
@@ -291,6 +315,82 @@ def allowed_logo(filename):
     return filename.rsplit(".", 1)[1].lower() in ALLOWED_LOGO_EXTENSIONS
 
 
+def normalize_text(value):
+    return " ".join(str(value or "").split())
+
+
+def normalize_optional_text(value):
+    return str(value or "").strip()
+
+
+def parse_checkbox_value(form_data, field_name):
+    return str(form_data.get(field_name, "")).strip().lower() in {"1", "true", "on", "yes"}
+
+
+def validate_submission_type(raw_type):
+    normalized_type = normalize_text(raw_type).lower()
+    if normalized_type not in SUBMISSION_TYPE_VALUES:
+        raise ValueError("Tipo de estabelecimento invalido.")
+    return normalized_type
+
+
+def validate_website(raw_website):
+    website = normalize_optional_text(raw_website)
+    if not website:
+        return ""
+
+    parsed = urlparse(website)
+    if parsed.scheme.lower() not in ALLOWED_WEBSITE_SCHEMES or not parsed.netloc:
+        raise ValueError("Website invalido. Use uma URL completa com http:// ou https://.")
+    return website
+
+
+def validate_check_date(raw_check_date):
+    check_date = normalize_optional_text(raw_check_date)
+    if not check_date:
+        return ""
+
+    try:
+        parsed_date = datetime.strptime(check_date, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("Data de verificacao invalida.") from exc
+
+    if parsed_date > datetime.now().date():
+        raise ValueError("Data de verificacao nao pode estar no futuro.")
+    return parsed_date.isoformat()
+
+
+def detect_logo_format(file_storage):
+    header = file_storage.stream.read(16)
+    file_storage.stream.seek(0)
+
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if header[:3] == b"\xff\xd8\xff":
+        return "jpg"
+    if header.startswith((b"GIF87a", b"GIF89a")):
+        return "gif"
+    if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+        return "webp"
+    return None
+
+
+def validate_logo_upload(file_storage, filename):
+    if not allowed_logo(filename):
+        raise ValueError("Formato de logo nao suportado.")
+
+    detected_format = detect_logo_format(file_storage)
+    if not detected_format:
+        raise ValueError("Arquivo de logo invalido.")
+
+    file_extension = filename.rsplit(".", 1)[1].lower()
+    valid_extensions = {"jpg", "jpeg"} if detected_format == "jpg" else {detected_format}
+    if file_extension not in valid_extensions:
+        raise ValueError("Extensao da logo nao corresponde ao arquivo enviado.")
+
+    return "jpg" if detected_format == "jpg" else detected_format
+
+
 def extract_city_label(address):
     parts = [part.strip() for part in address.split(",") if part.strip()]
     if len(parts) >= 2:
@@ -298,7 +398,7 @@ def extract_city_label(address):
     return address
 
 
-def serialize_establishment(row):
+def build_establishment_base(row):
     logo_filename = row.get("logo_filename") if isinstance(row, dict) else row["logo_filename"]
     logo_url = (
         url_for("static", filename=f"logos/{logo_filename}")
@@ -314,26 +414,77 @@ def serialize_establishment(row):
         "type_label": TYPE_LABELS.get(raw_type, "Outro"),
         "address": address,
         "city_label": extract_city_label(address),
-        "email": row.get("email") if isinstance(row, dict) else row["email"],
-        "phone": row.get("telefone") if isinstance(row, dict) else row["telefone"],
-        "website": row.get("website") if isinstance(row, dict) else row["website"],
-        "notes": row.get("observacoes") if isinstance(row, dict) else row["observacoes"],
-        "check_date": row.get("data_verificacao") if isinstance(row, dict) else row["data_verificacao"],
         "accepts_lightning": bool(row.get("aceita_lightning") if isinstance(row, dict) else row["aceita_lightning"]),
         "accepts_onchain": bool(row.get("aceita_onchain") if isinstance(row, dict) else row["aceita_onchain"]),
         "accepts_contactless": bool(
             row.get("aceita_contactless") if isinstance(row, dict) else row["aceita_contactless"]
         ),
         "logo_url": logo_url,
-        "source": "database",
     }
 
 
-def fetch_establishments():
+def serialize_public_establishment(row):
+    establishment = build_establishment_base(row)
+    establishment.update(
+        {
+            "website": row.get("website") if isinstance(row, dict) else row["website"],
+            "source": "database",
+        }
+    )
+    return establishment
+
+
+def serialize_internal_establishment(row):
+    establishment = serialize_public_establishment(row)
+    establishment.update(
+        {
+            "email": row.get("email") if isinstance(row, dict) else row["email"],
+            "phone": row.get("telefone") if isinstance(row, dict) else row["telefone"],
+            "notes": row.get("observacoes") if isinstance(row, dict) else row["observacoes"],
+            "check_date": row.get("data_verificacao") if isinstance(row, dict) else row["data_verificacao"],
+        }
+    )
+    return establishment
+
+
+def fetch_establishments(include_private=False):
     with sqlite3.connect(DB_FILE_PATH) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute("SELECT * FROM estabelecimentos ORDER BY id DESC").fetchall()
-    return [serialize_establishment(dict(row)) for row in rows]
+
+    serializer = serialize_internal_establishment if include_private else serialize_public_establishment
+    return [serializer(dict(row)) for row in rows]
+
+
+def establishment_exists(conn, nome, tipo, endereco):
+    row = conn.execute(
+        """
+        SELECT id
+        FROM estabelecimentos
+        WHERE lower(trim(nome)) = ?
+          AND lower(trim(tipo)) = ?
+          AND lower(trim(endereco)) = ?
+        LIMIT 1
+        """,
+        (nome.casefold(), tipo.casefold(), endereco.casefold()),
+    ).fetchone()
+    return row is not None
+
+
+@app.errorhandler(413)
+def handle_payload_too_large(_error):
+    message = "Arquivo excede o limite de 5 MB."
+    if request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": message}), 413
+    return message, 413
+
+
+def save_logo_upload(file_storage, safe_name):
+    extension = validate_logo_upload(file_storage, safe_name)
+    logo_filename = f"{uuid4().hex}.{extension}"
+    logo_path = os.path.join(UPLOAD_FOLDER, logo_filename)
+    file_storage.save(logo_path)
+    return logo_filename, logo_path
 
 
 def build_home_stats(establishments):
@@ -352,6 +503,7 @@ def inject_site_context():
         "site_nav": SITE_NAV,
         "site_social_links": SOCIAL_LINKS,
         "site_footer_links": FOOTER_LINKS,
+        "submission_types": SUBMISSION_TYPE_OPTIONS,
         "current_year": datetime.now().year,
         "site_name": "Aceita Bitcoin? / BRLN",
         "site_url": request.url_root.rstrip("/"),
@@ -484,9 +636,9 @@ def cadastrar_estabelecimento():
     arquivo = request.files.get("logo")
 
     required_fields = {
-        "nome": data.get("nome", "").strip(),
-        "tipo": data.get("tipo", "").strip(),
-        "endereco": data.get("endereco", "").strip(),
+        "nome": normalize_text(data.get("nome")),
+        "tipo": normalize_text(data.get("tipo")).lower(),
+        "endereco": normalize_text(data.get("endereco")),
     }
     missing = [field for field, value in required_fields.items() if not value]
     if missing:
@@ -527,6 +679,81 @@ def cadastrar_estabelecimento():
         conn.commit()
 
     return jsonify({"success": True, "message": "Estabelecimento cadastrado com sucesso."})
+
+
+def cadastrar_estabelecimento_v2():
+    data = request.form
+    arquivo = request.files.get("logo")
+
+    required_fields = {
+        "nome": normalize_text(data.get("nome")),
+        "tipo": normalize_text(data.get("tipo")).lower(),
+        "endereco": normalize_text(data.get("endereco")),
+    }
+    missing = [field for field, value in required_fields.items() if not value]
+    if missing:
+        return jsonify({"success": False, "message": f"Campos obrigatorios ausentes: {', '.join(missing)}."}), 400
+
+    try:
+        validated_type = validate_submission_type(required_fields["tipo"])
+        validated_website = validate_website(data.get("website"))
+        validated_check_date = validate_check_date(data.get("data_verificacao"))
+    except ValueError as exc:
+        return jsonify({"success": False, "message": str(exc)}), 400
+
+    logo_filename = None
+    logo_path = None
+
+    try:
+        with sqlite3.connect(DB_FILE_PATH) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            cursor = conn.cursor()
+
+            if establishment_exists(conn, required_fields["nome"], validated_type, required_fields["endereco"]):
+                return jsonify(
+                    {"success": False, "message": "Ja existe um cadastro com o mesmo nome, tipo e endereco."}
+                ), 409
+
+            if arquivo and arquivo.filename:
+                safe_name = secure_filename(arquivo.filename)
+                logo_filename, logo_path = save_logo_upload(arquivo, safe_name)
+
+            cursor.execute(
+                """
+                INSERT INTO estabelecimentos (
+                    nome, tipo, endereco, email, telefone, website, observacoes,
+                    aceita_lightning, aceita_onchain, aceita_contactless, data_verificacao, logo_filename
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    required_fields["nome"],
+                    validated_type,
+                    required_fields["endereco"],
+                    normalize_optional_text(data.get("email")),
+                    normalize_optional_text(data.get("telefone")),
+                    validated_website,
+                    normalize_optional_text(data.get("observacoes")),
+                    parse_checkbox_value(data, "aceita_lightning"),
+                    parse_checkbox_value(data, "aceita_onchain"),
+                    parse_checkbox_value(data, "aceita_contactless"),
+                    validated_check_date,
+                    logo_filename,
+                ),
+            )
+            conn.commit()
+    except ValueError as exc:
+        if logo_path and os.path.exists(logo_path):
+            os.remove(logo_path)
+        return jsonify({"success": False, "message": str(exc)}), 400
+    except sqlite3.Error:
+        if logo_path and os.path.exists(logo_path):
+            os.remove(logo_path)
+        return jsonify({"success": False, "message": "Nao foi possivel salvar o cadastro agora."}), 500
+
+    return jsonify({"success": True, "message": "Estabelecimento cadastrado com sucesso."})
+
+
+app.view_functions["cadastrar_estabelecimento"] = cadastrar_estabelecimento_v2
 
 
 @app.route("/api/estabelecimentos", methods=["GET"])
