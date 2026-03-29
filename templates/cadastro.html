@@ -12,6 +12,13 @@
       <div id="formFeedback" class="message-box" hidden></div>
 
       <form id="cadastroForm" class="stack-form" enctype="multipart/form-data">
+        <input type="hidden" name="submission_token" value="{{ submission_token }}">
+        <div class="honeypot-field" aria-hidden="true">
+          <label class="field">
+            <span>Seu site</span>
+            <input type="text" name="website_confirmation" tabindex="-1" autocomplete="off">
+          </label>
+        </div>
         <div class="form-two-columns">
           <label class="field">
             <span>Nome do estabelecimento *</span>

@@ -1,12 +1,13 @@
 from datetime import datetime
 import os
 import sqlite3
+import time
 from urllib.parse import urlparse
 from uuid import uuid4
 
 import dotenv
 from flask import Flask, jsonify, redirect, render_template, request, url_for
-from flask_cors import CORS
+from itsdangerous import BadSignature, URLSafeSerializer
 from werkzeug.utils import secure_filename
 
 
@@ -15,7 +16,7 @@ dotenv.load_dotenv(".env")
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
-CORS(app)
+app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY") or os.getenv("SECRET_KEY") or os.urandom(32).hex()
 
 DB_FILE_PATH = dotenv.get_key(".env", "DB_FILE_PATH") or "database.db"
 PORT = int(dotenv.get_key(".env", "PORT") or os.getenv("PORT") or 5000)
@@ -53,6 +54,11 @@ SUBMISSION_TYPE_OPTIONS = [
 ]
 SUBMISSION_TYPE_VALUES = {item["value"] for item in SUBMISSION_TYPE_OPTIONS}
 ALLOWED_WEBSITE_SCHEMES = {"http", "https"}
+SUBMISSION_TOKEN_MIN_AGE_SECONDS = 3
+SUBMISSION_TOKEN_MAX_AGE_SECONDS = 12 * 60 * 60
+SUBMISSION_BURST_LIMIT = 6
+SUBMISSION_BURST_WINDOW_SECONDS = 10 * 60
+SUBMISSION_DAILY_LIMIT = 30
 
 SITE_NAV = [
     {"endpoint": "serve_index", "label": "Início"},
@@ -306,6 +312,23 @@ def init_db():
             ON estabelecimentos (tipo, nome, endereco)
             """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS submission_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip_address TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                blocked INTEGER NOT NULL DEFAULT 0,
+                reason TEXT
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_submission_attempts_ip_created
+            ON submission_attempts (ip_address, created_at)
+            """
+        )
         conn.commit()
 
 
@@ -487,6 +510,95 @@ def save_logo_upload(file_storage, safe_name):
     return logo_filename, logo_path
 
 
+def get_submission_serializer():
+    return URLSafeSerializer(app.config["SECRET_KEY"], salt="cadastro-antispam")
+
+
+def generate_submission_token():
+    payload = {
+        "form": "cadastro",
+        "issued_at": int(time.time()),
+    }
+    return get_submission_serializer().dumps(payload)
+
+
+def validate_submission_token(token):
+    if not token:
+        raise ValueError("Nao foi possivel validar o envio.")
+
+    try:
+        payload = get_submission_serializer().loads(token)
+    except BadSignature as exc:
+        raise ValueError("Nao foi possivel validar o envio.") from exc
+
+    if payload.get("form") != "cadastro":
+        raise ValueError("Nao foi possivel validar o envio.")
+
+    issued_at = int(payload.get("issued_at", 0))
+    age_seconds = int(time.time()) - issued_at
+    if age_seconds < SUBMISSION_TOKEN_MIN_AGE_SECONDS:
+        raise ValueError("Espere alguns segundos antes de enviar o cadastro.")
+    if age_seconds > SUBMISSION_TOKEN_MAX_AGE_SECONDS:
+        raise ValueError("O formulario expirou. Recarregue a pagina e tente novamente.")
+
+
+def get_client_ip():
+    if request.access_route:
+        return request.access_route[0]
+    return request.remote_addr or "unknown"
+
+
+def record_submission_attempt(conn, ip_address, created_at, blocked, reason):
+    conn.execute(
+        """
+        INSERT INTO submission_attempts (ip_address, created_at, blocked, reason)
+        VALUES (?, ?, ?, ?)
+        """,
+        (ip_address, created_at, int(bool(blocked)), reason),
+    )
+
+
+def log_submission_attempt(ip_address, blocked, reason):
+    with sqlite3.connect(DB_FILE_PATH) as conn:
+        record_submission_attempt(conn, ip_address, int(time.time()), blocked, reason)
+        conn.commit()
+
+
+def prune_submission_attempts(conn, current_ts):
+    conn.execute(
+        "DELETE FROM submission_attempts WHERE created_at < ?",
+        (current_ts - (2 * 24 * 60 * 60),),
+    )
+
+
+def submission_limit_message(conn, ip_address, current_ts):
+    burst_count = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM submission_attempts
+        WHERE ip_address = ?
+          AND created_at >= ?
+        """,
+        (ip_address, current_ts - SUBMISSION_BURST_WINDOW_SECONDS),
+    ).fetchone()[0]
+    if burst_count >= SUBMISSION_BURST_LIMIT:
+        return "Muitas tentativas em pouco tempo. Aguarde alguns minutos antes de tentar novamente."
+
+    daily_count = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM submission_attempts
+        WHERE ip_address = ?
+          AND created_at >= ?
+        """,
+        (ip_address, current_ts - (24 * 60 * 60)),
+    ).fetchone()[0]
+    if daily_count >= SUBMISSION_DAILY_LIMIT:
+        return "Limite diario de envios atingido para este IP. Tente novamente mais tarde."
+
+    return None
+
+
 def build_home_stats(establishments):
     mapped_cities = {entry["city_label"] for entry in establishments if entry["city_label"]}
     return [
@@ -541,6 +653,7 @@ def serve_cadastro():
         page_description="Cadastre um estabelecimento e organize a ativação local de pagamentos com Bitcoin.",
         prefill=prefill,
         default_check_date=datetime.now().strftime("%Y-%m-%d"),
+        submission_token=generate_submission_token(),
     )
 
 
@@ -684,6 +797,28 @@ def cadastrar_estabelecimento():
 def cadastrar_estabelecimento_v2():
     data = request.form
     arquivo = request.files.get("logo")
+    client_ip = get_client_ip()
+    current_ts = int(time.time())
+
+    with sqlite3.connect(DB_FILE_PATH) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        prune_submission_attempts(conn, current_ts)
+        limit_message = submission_limit_message(conn, client_ip, current_ts)
+        if limit_message:
+            record_submission_attempt(conn, client_ip, current_ts, True, "rate_limit")
+            conn.commit()
+            return jsonify({"success": False, "message": limit_message}), 429
+        conn.commit()
+
+    if normalize_optional_text(data.get("website_confirmation")):
+        log_submission_attempt(client_ip, True, "honeypot")
+        return jsonify({"success": False, "message": "Nao foi possivel validar o envio."}), 400
+
+    try:
+        validate_submission_token(normalize_optional_text(data.get("submission_token")))
+    except ValueError as exc:
+        log_submission_attempt(client_ip, True, "token")
+        return jsonify({"success": False, "message": str(exc)}), 400
 
     required_fields = {
         "nome": normalize_text(data.get("nome")),
@@ -692,6 +827,7 @@ def cadastrar_estabelecimento_v2():
     }
     missing = [field for field, value in required_fields.items() if not value]
     if missing:
+        log_submission_attempt(client_ip, True, "missing_fields")
         return jsonify({"success": False, "message": f"Campos obrigatorios ausentes: {', '.join(missing)}."}), 400
 
     try:
@@ -699,6 +835,7 @@ def cadastrar_estabelecimento_v2():
         validated_website = validate_website(data.get("website"))
         validated_check_date = validate_check_date(data.get("data_verificacao"))
     except ValueError as exc:
+        log_submission_attempt(client_ip, True, "validation")
         return jsonify({"success": False, "message": str(exc)}), 400
 
     logo_filename = None
@@ -708,8 +845,17 @@ def cadastrar_estabelecimento_v2():
         with sqlite3.connect(DB_FILE_PATH) as conn:
             conn.execute("BEGIN IMMEDIATE")
             cursor = conn.cursor()
+            prune_submission_attempts(conn, current_ts)
+
+            limit_message = submission_limit_message(conn, client_ip, current_ts)
+            if limit_message:
+                record_submission_attempt(conn, client_ip, current_ts, True, "rate_limit")
+                conn.commit()
+                return jsonify({"success": False, "message": limit_message}), 429
 
             if establishment_exists(conn, required_fields["nome"], validated_type, required_fields["endereco"]):
+                record_submission_attempt(conn, client_ip, current_ts, False, "duplicate")
+                conn.commit()
                 return jsonify(
                     {"success": False, "message": "Ja existe um cadastro com o mesmo nome, tipo e endereco."}
                 ), 409
@@ -740,14 +886,17 @@ def cadastrar_estabelecimento_v2():
                     logo_filename,
                 ),
             )
+            record_submission_attempt(conn, client_ip, current_ts, False, "accepted")
             conn.commit()
     except ValueError as exc:
         if logo_path and os.path.exists(logo_path):
             os.remove(logo_path)
+        log_submission_attempt(client_ip, True, "logo_validation")
         return jsonify({"success": False, "message": str(exc)}), 400
     except sqlite3.Error:
         if logo_path and os.path.exists(logo_path):
             os.remove(logo_path)
+        log_submission_attempt(client_ip, True, "db_error")
         return jsonify({"success": False, "message": "Nao foi possivel salvar o cadastro agora."}), 500
 
     return jsonify({"success": True, "message": "Estabelecimento cadastrado com sucesso."})
