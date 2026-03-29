@@ -9,6 +9,7 @@ import dotenv
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 from itsdangerous import BadSignature, URLSafeSerializer
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 
 dotenv.load_dotenv(".env")
@@ -17,6 +18,8 @@ app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY") or os.getenv("SECRET_KEY") or os.urandom(32).hex()
+TRUSTED_PROXY_HOPS = int(os.getenv("TRUSTED_PROXY_HOPS") or 1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=TRUSTED_PROXY_HOPS, x_proto=1, x_host=1)
 
 DB_FILE_PATH = dotenv.get_key(".env", "DB_FILE_PATH") or "database.db"
 PORT = int(dotenv.get_key(".env", "PORT") or os.getenv("PORT") or 5000)
@@ -543,8 +546,6 @@ def validate_submission_token(token):
 
 
 def get_client_ip():
-    if request.access_route:
-        return request.access_route[0]
     return request.remote_addr or "unknown"
 
 
@@ -914,7 +915,7 @@ init_db()
 
 
 if __name__ == "__main__":
-    host = os.getenv("FLASK_HOST", "0.0.0.0")
+    host = os.getenv("FLASK_HOST", "127.0.0.1")
     port = int(os.getenv("FLASK_PORT") or PORT)
     debug = os.getenv("FLASK_DEBUG", "").lower() in {"1", "true", "yes", "on"}
     app.run(host=host, port=port, debug=debug)
