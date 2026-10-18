@@ -1,0 +1,45 @@
+# Unit do systemd do Aceita Bitcoin? (waitress atras do nginx).
+#
+# Instalar ou atualizar, na VPS:
+#   cd /home/webuser/aqui-aceita-bitcoin
+#   sudo -u webuser python3 -m venv venv            # so na primeira vez
+#   sudo -u webuser venv/bin/pip install -r requirements.txt
+#   sudo cp deploy/aqui-aceita-bitcoin.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl restart aqui-aceita-bitcoin
+#   systemctl status aqui-aceita-bitcoin
+#
+# Segredos e ajustes ficam no .env da pasta (fora do git) ou em
+# /etc/aqui-aceita-bitcoin.env. Sem FLASK_SECRET_KEY, o app cria
+# instance/secret_key (permissao 600) na primeira vez e reusa depois.
+
+[Unit]
+Description=Aceita Bitcoin? (aqui-aceita-bitcoin.br-ln.com)
+After=network.target
+
+[Service]
+Type=simple
+User=webuser
+Group=webuser
+WorkingDirectory=/home/webuser/aqui-aceita-bitcoin
+EnvironmentFile=-/etc/aqui-aceita-bitcoin.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/webuser/aqui-aceita-bitcoin/venv/bin/python serve.py
+Restart=on-failure
+RestartSec=5
+
+# Endurecimento: o app so escreve no banco, nos logos enviados e em instance/.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/webuser/aqui-aceita-bitcoin
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target
