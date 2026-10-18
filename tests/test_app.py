@@ -108,7 +108,7 @@ def test_sitemap_lista_a_trilha(client):
 
 def test_canonical_usa_site_url_sem_query(client):
     html = client.get("/cadastro?nome=abc").get_data(as_text=True)
-    assert '<link rel="canonical" href="https://aqui-aceita-bitcoin.br-ln.com/cadastro">' in html
+    assert '<link rel="canonical" href="https://aceita-bitcoin.br-ln.com/cadastro">' in html
 
 
 def test_cabecalhos_de_seguranca(client):

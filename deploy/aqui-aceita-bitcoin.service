@@ -14,7 +14,7 @@
 # instance/secret_key (permissao 600) na primeira vez e reusa depois.
 
 [Unit]
-Description=Aceita Bitcoin? (aqui-aceita-bitcoin.br-ln.com)
+Description=Aceita Bitcoin? (aceita-bitcoin.br-ln.com)
 After=network.target
 
 [Service]

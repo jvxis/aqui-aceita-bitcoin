@@ -90,7 +90,7 @@ def mensagem(rows, remetente, destino):
     msg["Message-ID"] = make_msgid()
     ids = " ".join(str(r["id"]) for r in rows)
     corpo = [
-        "Chegou %s no aqui-aceita-bitcoin.br-ln.com, e %s só aparece%s no diretório depois de aprovado%s:"
+        "Chegou %s no aceita-bitcoin.br-ln.com, e %s só aparece%s no diretório depois de aprovado%s:"
         % ("cadastro novo" if not plural else "%d cadastros novos" % len(rows), "ele" if not plural else "eles",
            "" if not plural else "m", "" if not plural else "s"),
         "",

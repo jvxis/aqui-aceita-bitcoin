@@ -72,7 +72,9 @@ app.config["DB_FILE_PATH"] = str(resolve_path(os.getenv("DB_FILE_PATH"), "databa
 # Os logos sao servidos em /static/logos: so mude UPLOAD_FOLDER nos testes.
 app.config["UPLOAD_FOLDER"] = str(resolve_path(os.getenv("UPLOAD_FOLDER"), "static/logos"))
 app.config["CADASTRO_MODERADO"] = env_flag("CADASTRO_MODERADO", True)
-app.config["SITE_URL"] = (os.getenv("SITE_URL") or "https://aqui-aceita-bitcoin.br-ln.com").rstrip("/")
+# O endereco que o Google conhece e indexa e o curto (Search Console, 18/10/2026); o longo redireciona
+# para ele no nginx. Trocar aqui faria o Google largar as paginas ja indexadas.
+app.config["SITE_URL"] = (os.getenv("SITE_URL") or "https://aceita-bitcoin.br-ln.com").rstrip("/")
 
 TRUSTED_PROXY_HOPS = int(os.getenv("TRUSTED_PROXY_HOPS") or 1)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=TRUSTED_PROXY_HOPS, x_proto=1, x_host=1)
