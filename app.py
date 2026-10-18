@@ -271,10 +271,9 @@ PILOT_ESTABLISHMENTS = [
     },
 ]
 
-# Os pilotos que sao estabelecimentos entram no diretorio publico junto com o banco.
-DIRECTORY_PILOTS = [
-    dict(item, pilot=True, source="pilot") for item in PILOT_ESTABLISHMENTS if item["type"] != "education"
-]
+# Os pilotos (Frederica's e DeltaD) ja estao cadastrados no banco de producao; soma-los ao diretorio
+# os mostrava duas vezes e inflava a contagem de locais (18/10/2026). O diretorio e so o banco.
+DIRECTORY_PILOTS = []
 
 WALLETS = [
     {
