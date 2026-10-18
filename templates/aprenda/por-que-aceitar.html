@@ -1,0 +1,98 @@
+{% extends "aprenda/_artigo.html" %}
+{% from "aprenda/_macros.html" import related_card with context %}
+
+{% block article_body %}
+  <h2>Em poucas palavras</h2>
+  <p>
+    Aceitar bitcoin é ter mais uma forma de receber, ao lado do Pix, do cartão e do dinheiro. Pela
+    <strong>Lightning</strong>, a rede de pagamentos rápidos do bitcoin, o valor chega em segundos e você só
+    precisa de um celular com uma carteira.
+  </p>
+
+  <h2>O que o comércio ganha</h2>
+  <ul>
+    <li>
+      <strong>Pagamento que não volta.</strong> No bitcoin não existe estorno. Quando o pagamento aparece como
+      recebido na sua carteira, ele é seu. Se precisar devolver, você faz um novo pagamento para o cliente.
+    </li>
+    <li>
+      <strong>Sem maquininha e sem mensalidade.</strong> Uma carteira gratuita no celular já basta para começar.
+    </li>
+    <li>
+      <strong>Taxas pequenas na Lightning.</strong> Receber costuma custar pouco ou nada. Algumas carteiras cobram
+      quando precisam abrir ou ampliar o canal que recebe os pagamentos: veja a tabela de cada uma antes de escolher.
+    </li>
+    <li>
+      <strong>Funciona a qualquer hora, de qualquer lugar.</strong> O turista ou o cliente de outra cidade paga do
+      mesmo jeito, sem câmbio no balcão e sem depender de banco.
+    </li>
+    <li>
+      <strong>Clientes que procuram você.</strong> Quem usa bitcoin procura onde gastar, em mapas como o BTC Map e em
+      diretórios como o <a href="{{ url_for('serve_estabelecimentos') }}">deste site</a>.
+    </li>
+    <li>
+      <strong>Aprender cedo, com pouco.</strong> A equipe aprende uma tecnologia nova com valores pequenos, no seu ritmo.
+    </li>
+  </ul>
+
+  <h2>Os limites, sem rodeio</h2>
+  <ul>
+    <li>
+      <strong>O preço do bitcoin em reais sobe e desce</strong>, às vezes bastante em poucos dias. O que você recebe
+      hoje pode valer mais ou menos amanhã. Decida antes o que fazer com o que entra: guardar uma parte, converter
+      para reais ou pagar fornecedores que aceitam. Não conte com valorização.
+    </li>
+    <li>
+      <strong>Ainda são poucos os clientes que pagam assim.</strong> Aceitar bitcoin é um complemento; não substitui o
+      Pix nem o cartão.
+    </li>
+    <li>
+      <strong>Sem estorno vale para os dois lados.</strong> Se cobrar o valor errado, quem corrige é você, combinando
+      com o cliente.
+    </li>
+    <li>
+      <strong>A segurança é sua.</strong> Principalmente quando só você tem as chaves da carteira. A página
+      <a href="{{ url_for('serve_aprenda_artigo', slug='seguranca') }}">Cuidados e segurança</a> explica o que fazer.
+    </li>
+    <li>
+      <strong>Venda em bitcoin é venda como qualquer outra.</strong> Anuncie o preço em reais, registre a venda e
+      converse com o seu contador sobre nota fiscal e sobre a declaração de criptoativos à Receita Federal.
+    </li>
+  </ul>
+
+  <div class="callout">
+    <strong>Isto não é recomendação de investimento.</strong>
+    <p>O Aceita Bitcoin? ensina a receber pagamentos. O que fazer com o que entra é decisão de cada um.</p>
+  </div>
+
+  <h2>Bitcoin, on-chain e Lightning: qual a diferença?</h2>
+  <p>
+    <strong>Bitcoin</strong> é o dinheiro e também a rede principal, chamada de <strong>on-chain</strong>: cada
+    transação entra num bloco, que sai em média a cada 10 minutos. A taxa on-chain muda com a procura; nos momentos
+    de muito movimento, pagar um cafezinho por ali pode sair caro.
+  </p>
+  <p>
+    A <strong>Lightning</strong> é uma rede construída em cima do bitcoin para pagamentos rápidos e baratos. O
+    pagamento chega em segundos e a taxa costuma ser bem pequena. Para o balcão, é a melhor experiência; o on-chain
+    fica para valores maiores.
+  </p>
+  <p>
+    Os valores costumam aparecer em <strong>sats</strong> (satoshis): 1 bitcoin tem 100 milhões de sats. As
+    carteiras mostram o valor em sats e o equivalente em reais.
+  </p>
+
+  <h2>E para quem não tem comércio?</h2>
+  <p>
+    Vale o mesmo raciocínio. Comece com uma carteira simples e valores pequenos, pague em locais que aceitam, receba de
+    amigos e aprenda no caminho. Quando se sentir seguro, dê o passo da autocustódia, em que só você controla os seus
+    bitcoins.
+  </p>
+{% endblock %}
+
+{% block aside %}
+  {{ related_card([
+    {"title": "Seja o seu próprio banco", "text": "Autocustódia e soberania financeira, no guia do BR⚡LN.", "url": brln_url("guias/seja-o-seu-proprio-banco/"), "external": True},
+    {"title": "Qual carteira Lightning usar", "text": "Custódia de terceiros, autocustódia no celular ou o próprio node.", "url": brln_url("guias/carteira-lightning/"), "external": True},
+    {"title": "BTC Map", "text": "O mapa mundial de locais que aceitam bitcoin.", "url": "https://btcmap.org/", "external": True},
+  ]) }}
+{% endblock %}

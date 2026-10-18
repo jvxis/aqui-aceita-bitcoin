@@ -1,0 +1,95 @@
+{% extends "aprenda/_artigo.html" %}
+{% from "aprenda/_macros.html" import related_card with context %}
+
+{% block article_body %}
+  <p>
+    Dá para começar em uma tarde, sem gastar nada além de alguns sats de teste. O segredo é testar com valores
+    pequenos antes de anunciar para o público.
+  </p>
+
+  <ol class="numbered-steps">
+    <li>
+      <h2>Escolha quem vai cuidar</h2>
+      <p>
+        Uma pessoa responsável, normalmente o dono ou o gerente, aprende primeiro e depois treina a equipe. É ela que
+        guarda o backup e decide o que fazer com o que entra.
+      </p>
+    </li>
+    <li>
+      <h2>Instale uma carteira Lightning</h2>
+      <p>
+        Para começar, uma carteira simples resolve. A página <a href="{{ url_for('serve_carteiras') }}">Carteiras</a>
+        explica a diferença entre deixar os fundos com uma empresa e guardar você mesmo. Baixe o app só pela loja
+        oficial do celular ou pelo site oficial da carteira: existem apps falsos.
+      </p>
+    </li>
+    <li>
+      <h2>Anote a frase de recuperação</h2>
+      <p>
+        Se a carteira mostrar 12 ou 24 palavras, escreva-as em papel, na ordem, e guarde em local seguro, longe do
+        caixa. Nada de foto, print, nuvem ou WhatsApp. Quem tem essas palavras tem os bitcoins.
+      </p>
+    </li>
+    <li>
+      <h2>Faça o primeiro teste com poucos sats</h2>
+      <p>
+        Pegue sats grátis no <a href="{{ brln_url('faucet/') }}" target="_blank" rel="noopener">faucet do BR⚡LN</a>
+        (21 sats por dia para um endereço Lightning) ou peça para um amigo enviar um valor pequeno. Depois mande de
+        volta: o teste só está completo quando você recebeu e enviou.
+      </p>
+      <p class="muted-text">
+        Para comprar os primeiros sats, há o
+        <a href="https://t.me/SATSfaction_bot?start=ref_1265103130" target="_blank" rel="noopener">SATSfaction</a>,
+        um bot no Telegram de gente que o clube conhece, ou uma corretora que permita sacar pela Lightning.
+      </p>
+    </li>
+    <li>
+      <h2>Defina como vai cobrar</h2>
+      <p>
+        O jeito mais seguro é gerar uma fatura com o valor da venda no celular do caixa. Um QR fixo impresso também
+        funciona, desde que alguém confira o valor recebido. A página
+        <a href="{{ url_for('serve_aprenda_artigo', slug='como-receber') }}">Como receber no caixa</a> compara as opções.
+      </p>
+    </li>
+    <li>
+      <h2>Treine a equipe</h2>
+      <p>
+        Faça uma venda de teste com alguém de fora. Mostre onde aparece o “recebido” no app e combine o que fazer se o
+        pagamento não chegar: não entregar, gerar outra cobrança e, se precisar, chamar o responsável.
+      </p>
+    </li>
+    <li>
+      <h2>Decida o que fazer com o que entra</h2>
+      <p>
+        Quanto fica na carteira do caixa, quando passar para uma reserva mais protegida e se, ou quando, converter para
+        reais. Registre as vendas como quaisquer outras e combine com o contador como declarar.
+      </p>
+    </li>
+    <li>
+      <h2>Avise os clientes</h2>
+      <p>
+        Cole o adesivo na porta e no caixa (estão em <a href="{{ url_for('serve_materiais') }}">Materiais</a>),
+        <a href="{{ url_for('serve_cadastro') }}">cadastre o local</a> no nosso diretório e inclua o estabelecimento no
+        <a href="https://btcmap.org/" target="_blank" rel="noopener">BTC Map</a>, que usa os dados do OpenStreetMap.
+      </p>
+    </li>
+  </ol>
+
+  <div class="callout callout-check">
+    <strong>Antes de anunciar, confira</strong>
+    <ul>
+      <li>Recebeu e enviou um pagamento de teste?</li>
+      <li>A equipe sabe onde conferir se o pagamento chegou?</li>
+      <li>A frase de recuperação está anotada e guardada (se a carteira tiver)?</li>
+      <li>Está decidido o que fazer com o que entra?</li>
+    </ul>
+  </div>
+{% endblock %}
+
+{% block aside %}
+  {{ related_card([
+    {"title": "Faucet do BR⚡LN", "text": "Sats grátis para o primeiro teste.", "url": brln_url("faucet/"), "external": True},
+    {"title": "Primeiros sats", "text": "Guia do faucet e de como receber os primeiros sats.", "url": brln_url("guias/faucet-lightning-primeiros-sats/"), "external": True},
+    {"title": "Qual carteira Lightning usar", "text": "As opções, com prós e contras, no guia do BR⚡LN.", "url": brln_url("guias/carteira-lightning/"), "external": True},
+  ]) }}
+{% endblock %}

@@ -1,27 +1,55 @@
 {% extends "base.html" %}
+{% from "aprenda/_macros.html" import trail_progress, trail_nav, related_card with context %}
 
 {% block content %}
-  <section class="hero-section compact-hero">
-    <div class="hero-grid">
-      <div class="hero-copy">
-        <span class="eyebrow">Carteiras</span>
-        <h1 class="headline">Escolha uma carteira compatível com o nível de operação do seu estabelecimento.</h1>
-        <p class="lead">
-          Em vez de listar tudo, a ideia aqui é ajudar a escolher com critério: velocidade de onboarding, nível de custódia
-          e adequação ao uso no caixa.
-        </p>
-      </div>
-      <aside class="hero-card">
-        <span class="card-kicker">Referência prática</span>
-        <h2 class="hero-card-title">A melhor carteira é a que a equipe realmente consegue usar sem travar o atendimento.</h2>
-      </aside>
-    </div>
+  <nav class="breadcrumb" aria-label="Você está em">
+    <a href="{{ url_for('serve_index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('serve_aprenda') }}">Aprenda</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">Carteiras</span>
+  </nav>
+
+  <section class="hero-section compact-hero article-hero">
+    <span class="eyebrow">{{ article.kicker }} de {{ learn_trail|length }}</span>
+    <h1 class="headline">Escolha a carteira que a sua equipe consegue usar sem travar o atendimento.</h1>
+    <p class="lead">
+      A primeira pergunta não é qual app, e sim quem guarda os bitcoins: uma empresa ou você. Entenda a diferença e
+      depois escolha.
+    </p>
+    {{ trail_progress(article) }}
+  </section>
+
+  <section class="page-grid custody-grid">
+    <article class="page-panel custody-card">
+      <span class="pill">Custódia de terceiros</span>
+      <h2 class="section-heading">Uma empresa guarda para você</h2>
+      <ul class="feature-list">
+        <li>Instala e já recebe: sem canais nem backup de palavras.</li>
+        <li>Se perder o celular, recupera a conta como num app de banco.</li>
+        <li>Em troca, você depende da empresa: ela pode bloquear, mudar regras ou sair do ar.</li>
+        <li>Bom para começar e para o capital de giro do caixa.</li>
+      </ul>
+    </article>
+    <article class="page-panel custody-card">
+      <span class="pill pill-brand">Autocustódia</span>
+      <h2 class="section-heading">Só você tem as chaves</h2>
+      <ul class="feature-list">
+        <li>Nenhuma empresa pode congelar os seus bitcoins.</li>
+        <li>A carteira mostra 12 ou 24 palavras: elas são o backup e valem o dinheiro.</li>
+        <li>Algumas cobram uma taxa quando precisam ampliar o canal para receber.</li>
+        <li>Bom para guardar o que acumula e para quem quer independência.</li>
+      </ul>
+    </article>
   </section>
 
   <section class="card-grid">
     {% for wallet in wallets %}
       <article class="wallet-card">
-        <span class="pill">{{ wallet.badge }}</span>
+        <div class="badge-row">
+          <span class="pill{% if wallet.custody_kind == 'self' %} pill-brand{% endif %}">{{ wallet.custody }}</span>
+          <span class="pill">{{ wallet.badge }}</span>
+        </div>
         <h2>{{ wallet.name }}</h2>
         <p>{{ wallet.summary }}</p>
         <p class="muted-text"><strong>Melhor encaixe:</strong> {{ wallet.fit }}</p>
@@ -35,24 +63,32 @@
     {% endfor %}
   </section>
 
+  <p class="fine-print">
+    A lista é um ponto de partida, não uma recomendação comercial: nenhuma carteira paga para aparecer aqui. Taxas,
+    recursos e disponibilidade no Brasil mudam; confira no site oficial antes de indicar.
+  </p>
+
   <section class="page-panel">
-    <span class="section-kicker">Implementação</span>
-    <h2 class="section-heading">Critério simples para decidir</h2>
+    <span class="section-kicker">Como decidir</span>
+    <h2 class="section-heading">Três perguntas</h2>
     <div class="steps-grid">
       <article class="step-card">
         <span class="step-index">01</span>
-        <h3>Quer velocidade?</h3>
-        <p>Priorize uma carteira com onboarding rápido e baixa fricção para treinamento inicial do caixa.</p>
+        <h3>Quer começar hoje?</h3>
+        <p>Uma carteira de custódia de terceiros, com endereço Lightning e modo de ponto de venda, resolve o caixa.</p>
       </article>
       <article class="step-card">
         <span class="step-index">02</span>
-        <h3>Quer mais soberania?</h3>
-        <p>Escolha uma opção com autocustódia e aceite lidar com mais responsabilidade operacional.</p>
+        <h3>Quer guardar o que acumula?</h3>
+        <p>Passe o excedente para uma carteira de autocustódia e cuide bem das palavras de recuperação.</p>
       </article>
       <article class="step-card">
         <span class="step-index">03</span>
-        <h3>Quer validar no balcão?</h3>
-        <p>Faça uma compra-teste real antes de anunciar para clientes que o local aceita Bitcoin.</p>
+        <h3>Quer independência total?</h3>
+        <p>
+          O próximo nível é o node próprio. O BR⚡LN tem o
+          <a href="{{ brln_url('guias/como-montar-um-node-lightning/') }}" class="inline-link" target="_blank" rel="noopener">guia para montar o seu</a>.
+        </p>
       </article>
     </div>
   </section>
@@ -60,27 +96,36 @@
   <section class="page-grid">
     <article class="page-panel faq-panel">
       <span class="section-kicker">Perguntas rápidas</span>
-      <h2 class="section-heading">FAQ essencial para o time comercial</h2>
+      <h2 class="section-heading">Dúvidas comuns</h2>
       <div class="faq-stack">
         <details>
-          <summary>Preciso recomendar uma única carteira para todo mundo?</summary>
-          <p>Não. O ideal é oferecer uma recomendação principal para onboarding e uma segunda opção para quem quer mais controle.</p>
+          <summary>Preciso usar uma carteira só?</summary>
+          <p>Não. É comum ter uma carteira simples no caixa e outra, de autocustódia, para guardar o que acumula.</p>
         </details>
         <details>
           <summary>Lightning é obrigatório?</summary>
-          <p>Para operação de balcão, Lightning costuma ser a melhor experiência. On-chain pode coexistir como opção complementar.</p>
+          <p>Para o balcão, a Lightning é a melhor experiência. O on-chain pode existir junto, para valores maiores.</p>
         </details>
         <details>
-          <summary>Vale treinar a equipe antes da divulgação?</summary>
-          <p>Sim. O material visual só deve ir para a vitrine depois que o fluxo de cobrança tiver sido testado.</p>
+          <summary>Posso usar a carteira de uma corretora?</summary>
+          <p>
+            Pode, se ela receber pela Lightning, mas é custódia de terceiros como qualquer outra: deixe ali só o
+            necessário.
+          </p>
+        </details>
+        <details>
+          <summary>Vale treinar a equipe antes de divulgar?</summary>
+          <p>Sim. O adesivo só deve ir para a vitrine depois de uma venda de teste completa.</p>
         </details>
       </div>
     </article>
 
-    <aside class="hero-card">
-      <span class="card-kicker">Próxima etapa</span>
-      <h2 class="hero-card-title">Depois de definir a carteira, registre o local e organize a ativação pública.</h2>
-      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar estabelecimento</a>
-    </aside>
+    {{ related_card([
+      {"title": "Qual carteira Lightning usar", "text": "O guia completo do BR⚡LN, com as três opções.", "url": brln_url("guias/carteira-lightning/"), "external": True},
+      {"title": "Seja o seu próprio banco", "text": "Por que a autocustódia importa.", "url": brln_url("guias/seja-o-seu-proprio-banco/"), "external": True},
+      {"title": "Faucet do BR⚡LN", "text": "Sats grátis para testar a carteira nova.", "url": brln_url("faucet/"), "external": True},
+    ]) }}
   </section>
+
+  {{ trail_nav(previous_step, next_step) }}
 {% endblock %}

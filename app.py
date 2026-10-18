@@ -150,11 +150,57 @@ PHONE_PATTERN = re.compile(r"^[0-9+()\-.\s]{8,40}$")
 
 SITE_NAV = [
     {"endpoint": "serve_index", "label": "Início"},
+    {"endpoint": "serve_aprenda", "label": "Aprenda"},
     {"endpoint": "serve_carteiras", "label": "Carteiras"},
     {"endpoint": "serve_estabelecimentos", "label": "Onde aceita"},
     {"endpoint": "serve_materiais", "label": "Materiais"},
     {"endpoint": "serve_sobre", "label": "Projeto"},
 ]
+
+# Trilha educativa, na ordem em que faz sentido ler.
+LEARN_TRAIL = [
+    {
+        "slug": "por-que-aceitar",
+        "endpoint": "serve_aprenda_artigo",
+        "title": "Por que aceitar bitcoin",
+        "kicker": "Passo 1",
+        "summary": "O que o comércio ganha com Lightning, o que muda no caixa e os limites que vale conhecer antes.",
+        "description": "Vantagens e limites de aceitar bitcoin e Lightning no comércio, explicados sem promessa de ganho.",
+    },
+    {
+        "slug": "como-comecar",
+        "endpoint": "serve_aprenda_artigo",
+        "title": "Como começar",
+        "kicker": "Passo 2",
+        "summary": "Do primeiro teste com poucos sats até a primeira venda real, em oito passos.",
+        "description": "Passo a passo para o comerciante começar a receber bitcoin: carteira, teste, caixa, equipe e divulgação.",
+    },
+    {
+        "slug": None,
+        "endpoint": "serve_carteiras",
+        "title": "Escolher a carteira",
+        "kicker": "Passo 3",
+        "summary": "Custódia de terceiros ou autocustódia: o que cada uma pede de você e quais carteiras usar.",
+        "description": "",
+    },
+    {
+        "slug": "como-receber",
+        "endpoint": "serve_aprenda_artigo",
+        "title": "Como receber no caixa",
+        "kicker": "Passo 4",
+        "summary": "Fatura, endereço Lightning, QR fixo e on-chain: quando usar cada um e como conferir o pagamento.",
+        "description": "Formas de cobrar em bitcoin no caixa e como conferir se o pagamento chegou de verdade.",
+    },
+    {
+        "slug": "seguranca",
+        "endpoint": "serve_aprenda_artigo",
+        "title": "Cuidados e segurança",
+        "kicker": "Passo 5",
+        "summary": "Frase de recuperação, golpes comuns no balcão, celular do caixa e o que fazer com o que entra.",
+        "description": "Como proteger a carteira do comércio, evitar golpes comuns e cuidar do que é recebido em bitcoin.",
+    },
+]
+LEARN_ARTICLES = {item["slug"]: item for item in LEARN_TRAIL if item["slug"]}
 
 SOCIAL_LINKS = [
     {"label": "Instagram", "url": "https://www.instagram.com/brln_club", "icon": "fa-brands fa-instagram"},
@@ -389,6 +435,11 @@ TIMELINE = [
         "period": "Março de 2026",
         "title": "Nova fase digital do projeto",
         "text": "O site ganhou navegação mais clara e uma base preparada para crescer.",
+    },
+    {
+        "period": "Outubro de 2026",
+        "title": "Site educativo",
+        "text": "Entrou a trilha Aprenda, com o passo a passo para comerciantes e pessoas comuns aceitarem bitcoin com segurança.",
     },
 ]
 
@@ -795,7 +846,7 @@ def build_home_stats(establishments):
     return [
         {"value": len(entries), "label": "locais no diretório"},
         {"value": len(mapped_cities), "label": "cidades com locais"},
-        {"value": len(PILOT_ESTABLISHMENTS), "label": "casos piloto"},
+        {"value": len(LEARN_TRAIL), "label": "passos na trilha Aprenda"},
     ]
 
 
@@ -805,6 +856,8 @@ def canonical_url():
 
 def page_section(endpoint):
     """Marca o item do menu como ativo, inclusive nas paginas filhas da trilha Aprenda."""
+    if endpoint == "serve_aprenda":
+        return request.endpoint in {"serve_aprenda", "serve_aprenda_artigo"}
     return request.endpoint == endpoint
 
 
@@ -826,6 +879,7 @@ def inject_site_context():
         "site_social_links": SOCIAL_LINKS,
         "site_footer_links": FOOTER_LINKS,
         "submission_types": SUBMISSION_TYPE_OPTIONS,
+        "learn_trail": LEARN_TRAIL,
         "current_year": datetime.now().year,
         "site_name": "Aceita Bitcoin? / BR⚡LN",
         "site_url": app.config["SITE_URL"],
@@ -847,7 +901,7 @@ def handle_not_found(_error):
             page_title="Página não encontrada | Aceita Bitcoin?",
             page_description="A página procurada não existe ou mudou de endereço.",
             error_title="Página não encontrada",
-            error_text="O endereço pode ter mudado. Volte ao início e siga pelo menu.",
+            error_text="O endereço pode ter mudado. Comece pela trilha Aprenda ou volte ao início.",
         ),
         404,
     )
@@ -884,11 +938,46 @@ def serve_index():
     return render_template(
         "index.html",
         page="home",
-        page_title="Aceita Bitcoin? | BR⚡LN",
-        page_description="Projeto para ajudar estabelecimentos e comunidades locais a ativarem pagamentos com Bitcoin e Lightning.",
-        featured_establishments=PILOT_ESTABLISHMENTS,
+        page_title="Aceita Bitcoin? | Aprenda a receber bitcoin no seu comércio",
+        page_description=(
+            "Guia em português para comerciantes e pessoas comuns aceitarem bitcoin e Lightning com segurança, "
+            "mais o diretório de locais que já aceitam."
+        ),
+        pilot_establishments=PILOT_ESTABLISHMENTS,
+        recent_establishments=establishments[:3],
         project_stats=build_home_stats(establishments),
-        public_count=len(establishments),
+    )
+
+
+@app.route("/aprenda")
+def serve_aprenda():
+    return render_template(
+        "aprenda/index.html",
+        page="aprenda",
+        page_title="Aprenda a aceitar bitcoin | Aceita Bitcoin?",
+        page_description=(
+            "Trilha em cinco passos para aceitar bitcoin e Lightning: por que aceitar, como começar, "
+            "carteiras, como receber e cuidados de segurança."
+        ),
+    )
+
+
+@app.route("/aprenda/<slug>")
+def serve_aprenda_artigo(slug):
+    article = LEARN_ARTICLES.get(slug)
+    if not article:
+        abort(404)
+    position = LEARN_TRAIL.index(article)
+    previous_step = LEARN_TRAIL[position - 1] if position > 0 else None
+    next_step = LEARN_TRAIL[position + 1] if position + 1 < len(LEARN_TRAIL) else None
+    return render_template(
+        f"aprenda/{slug}.html",
+        page="aprenda",
+        page_title=f"{article['title']} | Aceita Bitcoin?",
+        page_description=article["description"],
+        article=article,
+        previous_step=previous_step,
+        next_step=next_step,
     )
 
 
@@ -948,6 +1037,7 @@ def serve_sobre():
 
 @app.route("/carteiras")
 def serve_carteiras():
+    trail_position = next(i for i, item in enumerate(LEARN_TRAIL) if item["endpoint"] == "serve_carteiras")
     return render_template(
         "carteiras.html",
         page="carteiras",
@@ -956,6 +1046,9 @@ def serve_carteiras():
             "Custódia de terceiros ou autocustódia: como escolher a carteira para receber bitcoin e Lightning no comércio."
         ),
         wallets=WALLETS,
+        article=LEARN_TRAIL[trail_position],
+        previous_step=LEARN_TRAIL[trail_position - 1],
+        next_step=LEARN_TRAIL[trail_position + 1],
     )
 
 
@@ -979,7 +1072,8 @@ def serve_robots():
 
 @app.route("/sitemap.xml")
 def serve_sitemap():
-    paths = [url_for("serve_index"), url_for("serve_carteiras")]
+    paths = [url_for("serve_index"), url_for("serve_aprenda")]
+    paths += [url_for(item["endpoint"], **({"slug": item["slug"]} if item["slug"] else {})) for item in LEARN_TRAIL]
     paths += [url_for("serve_estabelecimentos"), url_for("serve_materiais"), url_for("serve_sobre"), url_for("serve_cadastro")]
     entries = "".join(f"<url><loc>{app.config['SITE_URL']}{path}</loc></url>" for path in paths)
     body = (

@@ -1,0 +1,92 @@
+{% extends "aprenda/_artigo.html" %}
+{% from "aprenda/_macros.html" import related_card with context %}
+
+{% block article_body %}
+  <h2>A frase de recuperação vale o dinheiro</h2>
+  <p>
+    Nas carteiras de autocustódia, 12 ou 24 palavras recuperam a carteira em qualquer celular. Quem tem essas palavras
+    tem os bitcoins, e não há banco para desfazer um roubo.
+  </p>
+  <ul>
+    <li>Escreva em papel, na ordem, e guarde em local seguro, longe do caixa. Uma segunda cópia em outro lugar seguro ajuda em caso de incêndio ou perda.</li>
+    <li>Nunca fotografe, nunca salve em nuvem, e-mail ou bloco de notas, nunca mande por WhatsApp e nunca digite em sites.</li>
+    <li>
+      <strong>Ninguém de verdade vai pedir as suas palavras</strong>: nem a carteira, nem o suporte, nem o BR⚡LN.
+      Quem pede é golpista.
+    </li>
+  </ul>
+
+  <h2>Custódia de terceiros: prático, mas exige confiança</h2>
+  <p>
+    Quando uma empresa guarda os fundos, ela pode bloquear a conta, mudar as regras, sair do ar ou quebrar. Deixe ali
+    só o capital de giro do caixa e leve o que acumular para uma carteira em que só você tem as chaves. Proteja a conta
+    com senha forte e verificação em duas etapas, se o app oferecer.
+  </p>
+
+  <h2>Golpes comuns no balcão</h2>
+  <ul>
+    <li><strong>Comprovante falso.</strong> Print ou tela de “enviado” no celular do cliente não prova nada. Confira no seu app.</li>
+    <li>
+      <strong>“Paguei a mais, me devolve a diferença.”</strong> Veja no seu app quanto entrou de fato antes de devolver
+      qualquer coisa.
+    </li>
+    <li>
+      <strong>QR trocado.</strong> Alguém cola um QR por cima do seu e o dinheiro vai para outra carteira. Confira os
+      impressos com frequência ou gere a cobrança na hora.
+    </li>
+    <li>
+      <strong>Falso suporte.</strong> Perfis que oferecem ajuda e pedem as palavras, um código ou acesso remoto ao
+      celular. Suporte de verdade não pede nada disso.
+    </li>
+    <li>
+      <strong>App falso.</strong> Baixe só pela loja oficial ou pelo site oficial da carteira e confira o nome do
+      desenvolvedor.
+    </li>
+    <li>
+      <strong>Promessa de rendimento.</strong> “Dobrar seus bitcoins”, “renda garantida”, “robô que opera sozinho”:
+      é golpe. Bitcoin parado não rende juros.
+    </li>
+  </ul>
+
+  <h2>O celular do caixa</h2>
+  <ul>
+    <li>Bloqueio de tela e PIN ou biometria no app da carteira.</li>
+    <li>Sistema e apps atualizados.</li>
+    <li>Modo de ponto de venda para a equipe, se a carteira tiver: o aparelho só recebe.</li>
+    <li>
+      Perdeu o celular? Na autocustódia, instale a carteira em outro aparelho e restaure com as palavras. Na custódia de
+      terceiros, entre na conta por outro aparelho e troque a senha.
+    </li>
+  </ul>
+
+  <h2>O que fazer com o que entra</h2>
+  <ul>
+    <li>Separe a carteira do caixa, do dia a dia, de uma reserva mais protegida.</li>
+    <li>
+      O preço em reais varia. Defina uma regra antes, como converter uma parte ou guardar um valor fixo por mês, e
+      siga a regra em vez de tentar adivinhar o mercado.
+    </li>
+    <li>Registre cada venda com o valor em reais na data e combine com o contador como declarar.</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <strong>Regra de ouro</strong>
+    <p>Comece pequeno. Só aumente os valores na carteira depois de entender o backup e de ter feito um teste completo.</p>
+  </div>
+
+  <h2>Quer ir além?</h2>
+  <p>
+    Quem quer independência total pode rodar o próprio node Lightning em casa. É um passo mais técnico, que os guias
+    do BR⚡LN explicam do começo:
+    <a href="{{ brln_url('guias/como-montar-um-node-lightning/') }}" target="_blank" rel="noopener">como montar um node</a>
+    e <a href="{{ brln_url('guias/seja-o-seu-proprio-banco/') }}" target="_blank" rel="noopener">seja o seu próprio banco</a>.
+  </p>
+{% endblock %}
+
+{% block aside %}
+  {{ related_card([
+    {"title": "Seja o seu próprio banco", "text": "Autocustódia explicada no guia do BR⚡LN.", "url": brln_url("guias/seja-o-seu-proprio-banco/"), "external": True},
+    {"title": "Qual carteira Lightning usar", "text": "Quem guarda as chaves em cada opção.", "url": brln_url("guias/carteira-lightning/"), "external": True},
+    {"title": "Como montar um node", "text": "O próprio node Lightning em casa, com o LightningOS.", "url": brln_url("guias/como-montar-um-node-lightning/"), "external": True},
+  ]) }}
+{% endblock %}

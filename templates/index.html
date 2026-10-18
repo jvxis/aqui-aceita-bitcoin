@@ -1,23 +1,24 @@
 {% extends "base.html" %}
+{% from "aprenda/_macros.html" import step_url with context %}
 
 {% block content %}
   <section class="hero-section">
     <div class="hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow">Ativação comercial • onboarding local • Bitcoin e Lightning no balcão</span>
-        <h1 class="headline">Ajude estabelecimentos a aceitarem Bitcoin com um fluxo claro, prático e replicável.</h1>
+        <span class="eyebrow">Projeto educativo do BR⚡LN • Bitcoin e Lightning no Brasil</span>
+        <h1 class="headline">Aprenda a aceitar bitcoin no seu comércio, com segurança e sem complicação.</h1>
         <p class="lead">
-          O projeto existe para tirar a adoção do campo da teoria. Em vez de só falar sobre Bitcoin, ele organiza
-          abordagem, cadastro, carteira, material visual e a primeira venda real no estabelecimento.
+          Um guia em português para comerciantes e para quem quer começar a usar bitcoin no dia a dia: por que aceitar,
+          como começar, qual carteira usar, como receber no caixa e os cuidados que evitam prejuízo.
         </p>
         <div class="hero-actions">
-          <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Começar cadastro</a>
-          <a href="{{ url_for('serve_materiais') }}" class="btn btn-secondary">Ver materiais</a>
+          <a href="{{ url_for('serve_aprenda') }}" class="btn btn-cta">Começar a trilha</a>
+          <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver onde aceita</a>
         </div>
         <div class="trust-row">
-          <span>Fluxo de ativação local</span>
-          <span>Materiais prontos para uso</span>
-          <span>Ecossistema BR⚡LN como base</span>
+          <span>Em português</span>
+          <span>Sem promessa de ganho</span>
+          <span>Feito por quem usa no dia a dia</span>
         </div>
         <div class="metric-strip">
           {% for stat in project_stats %}
@@ -30,13 +31,13 @@
       </div>
 
       <aside class="hero-card">
-        <span class="card-kicker">Para quem serve</span>
-        <h2 class="hero-card-title">Uma base útil para comunidades locais, comerciantes e quem está liderando a adoção na prática.</h2>
+        <span class="card-kicker">Para quem é</span>
+        <h2 class="hero-card-title">Para quem vende, para quem compra e para quem ajuda os outros a começar.</h2>
         <ul class="feature-list">
-          <li>Comerciantes que querem testar recebimentos com baixo atrito.</li>
-          <li>Comunidades locais que precisam de uma página séria para apresentar a iniciativa.</li>
-          <li>Voluntários e organizadores que fazem onboarding em campo.</li>
-          <li>Pessoas que precisam de material para explicar, ativar e acompanhar.</li>
+          <li>Comerciantes que querem receber bitcoin sem maquininha nem mensalidade.</li>
+          <li>Pessoas que querem pagar e receber em bitcoin com segurança.</li>
+          <li>Voluntários que apresentam o bitcoin ao comércio da cidade.</li>
+          <li>Comunidades locais que querem colocar a cidade no mapa.</li>
         </ul>
       </aside>
     </div>
@@ -45,54 +46,51 @@
   <section class="page-panel">
     <div class="section-heading-row">
       <div>
-        <span class="section-kicker">Como funciona</span>
-        <h2 class="section-heading">Um fluxo simples para ativar um comércio local</h2>
+        <span class="section-kicker">Aprenda</span>
+        <h2 class="section-heading">A trilha em cinco passos</h2>
       </div>
+      <a href="{{ url_for('serve_aprenda') }}" class="inline-link">Ver a trilha completa</a>
     </div>
-
-    <div class="steps-grid">
-      <article class="step-card">
-        <span class="step-index">01</span>
-        <h3>Mapear o local</h3>
-        <p>Coletar nome, endereço, tipo de negócio, canais de contato e formato de recebimento desejado.</p>
-      </article>
-      <article class="step-card">
-        <span class="step-index">02</span>
-        <h3>Configurar a carteira</h3>
-        <p>Escolher a carteira adequada para o perfil do negócio e validar o processo de cobrança no balcão.</p>
-      </article>
-      <article class="step-card">
-        <span class="step-index">03</span>
-        <h3>Fazer a ativação</h3>
-        <p>Entregar material visual, orientar a equipe e registrar o local como parte da iniciativa.</p>
-      </article>
+    <div class="trail-grid">
+      {% for step in learn_trail %}
+        <a href="{{ step_url(step) }}" class="step-card trail-card">
+          <span class="step-index">{{ "%02d"|format(loop.index) }}</span>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.summary }}</p>
+        </a>
+      {% endfor %}
     </div>
   </section>
 
   <section class="page-grid">
     <article class="page-panel">
-      <span class="section-kicker">O que o projeto entrega</span>
-      <h2 class="section-heading">Um stack simples para tirar a aceitação de Bitcoin do improviso</h2>
+      <span class="section-kicker">Em 30 segundos</span>
+      <h2 class="section-heading">O que muda no caixa quando você aceita bitcoin pela Lightning</h2>
       <div class="benefits-grid">
         <div class="benefit-card">
-          <p>Cadastro centralizado para registrar locais, contatos e meios de recebimento.</p>
+          <p><strong>Chega em segundos.</strong> O cliente lê o QR code e o valor aparece no seu app na hora.</p>
         </div>
         <div class="benefit-card">
-          <p>Página de materiais com mensagens prontas, peças visuais e biblioteca de apoio.</p>
+          <p><strong>Não tem estorno.</strong> Recebido é recebido. Devolução, se precisar, é um novo pagamento.</p>
         </div>
         <div class="benefit-card">
-          <p>Diretório público para mostrar prova social e ajudar novos usuários a encontrarem pontos ativos.</p>
+          <p><strong>Só um celular.</strong> Sem maquininha e sem mensalidade; a carteira é grátis.</p>
         </div>
       </div>
+      <p class="muted-text section-note">
+        E os limites? O preço em reais varia e ainda são poucos os clientes que pagam assim.
+        <a href="{{ url_for('serve_aprenda_artigo', slug='por-que-aceitar') }}" class="inline-link">Veja os prós e os contras</a>.
+      </p>
     </article>
 
     <aside class="hero-card">
-      <span class="card-kicker">Ponto de partida</span>
-      <h2 class="hero-card-title">{{ public_count }} cadastros públicos no banco hoje.</h2>
-      <p class="muted-text">
-        Enquanto a base pública ainda cresce, os casos piloto ajudam a mostrar que o projeto já tem lastro e pode ser
-        expandido com mais consistência.
-      </p>
+      <span class="card-kicker">Primeiro teste</span>
+      <h2 class="hero-card-title">Pegue sats grátis e faça o primeiro recebimento hoje.</h2>
+      <p>O faucet do BR⚡LN envia alguns sats por dia para um endereço Lightning. É o jeito mais simples de testar a carteira.</p>
+      <div class="hero-actions">
+        <a href="{{ brln_url('faucet/') }}" class="btn btn-cta" target="_blank" rel="noopener">Abrir o faucet</a>
+        <a href="{{ url_for('serve_aprenda_artigo', slug='como-comecar') }}" class="btn btn-secondary">Como começar</a>
+      </div>
     </aside>
   </section>
 
@@ -100,23 +98,23 @@
     <div class="section-heading-row">
       <div>
         <span class="section-kicker">Casos piloto</span>
-        <h2 class="section-heading">Alguns pontos já conectados à iniciativa</h2>
+        <h2 class="section-heading">Onde o projeto começou</h2>
       </div>
-      <a href="{{ url_for('serve_estabelecimentos') }}" class="inline-link">Ver diretório público</a>
+      <a href="{{ url_for('serve_estabelecimentos') }}" class="inline-link">Ver todos os locais</a>
     </div>
 
     <div class="card-grid">
-      {% for establishment in featured_establishments %}
+      {% for establishment in pilot_establishments %}
         <article class="establishment-card">
           <div class="establishment-logo-wrap">
-            <img src="{{ establishment.logo_url }}" alt="{{ establishment.name }}" class="establishment-logo">
+            <img src="{{ establishment.logo_url }}" alt="{{ establishment.name }}" class="establishment-logo" loading="lazy">
           </div>
           <div class="establishment-body">
             <span class="pill">{{ establishment.type_label }}</span>
             <h3>{{ establishment.name }}</h3>
             <p>{{ establishment.excerpt or establishment.address }}</p>
             <div class="meta-row">
-              <span><i class="fa-solid fa-location-dot"></i> {{ establishment.city_label }}</span>
+              <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ establishment.city_label }}</span>
             </div>
             <div class="badge-row">
               {% if establishment.accepts_lightning %}<span class="payment-badge is-lightning">Lightning</span>{% endif %}
@@ -129,12 +127,44 @@
     </div>
   </section>
 
+  {% if recent_establishments %}
+    <section class="page-panel">
+      <div class="section-heading-row">
+        <div>
+          <span class="section-kicker">Chegaram ao diretório</span>
+          <h2 class="section-heading">Cadastros mais recentes</h2>
+        </div>
+        <a href="{{ url_for('serve_estabelecimentos') }}" class="inline-link">Ver o diretório</a>
+      </div>
+      <div class="card-grid">
+        {% for establishment in recent_establishments %}
+          <article class="establishment-card">
+            <div class="establishment-logo-wrap">
+              <img src="{{ establishment.logo_url }}" alt="{{ establishment.name }}" class="establishment-logo" loading="lazy">
+            </div>
+            <div class="establishment-body">
+              <span class="pill">{{ establishment.type_label }}</span>
+              <h3>{{ establishment.name }}</h3>
+              <p>{{ establishment.address }}</p>
+              <div class="badge-row">
+                {% if establishment.accepts_lightning %}<span class="payment-badge is-lightning">Lightning</span>{% endif %}
+                {% if establishment.accepts_onchain %}<span class="payment-badge is-onchain">On-chain</span>{% endif %}
+                {% if establishment.accepts_contactless %}<span class="payment-badge is-contactless">Contactless</span>{% endif %}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
   <section class="page-grid">
     <article class="page-panel map-panel">
       <span class="section-kicker">Mapa</span>
-      <h2 class="section-heading">BTC Map como ponto de descoberta</h2>
+      <h2 class="section-heading">Locais que aceitam bitcoin no BTC Map</h2>
       <p class="muted-text">
-        O mapa continua relevante, mas agora entra como apoio à conversão, não como bloco solto no meio da página.
+        O BTC Map mostra, no mundo todo, os locais que aceitam bitcoin, com dados do OpenStreetMap. Use para achar onde
+        pagar e, depois de começar a aceitar, para incluir o seu estabelecimento.
       </p>
       <div class="map-shell">
         <iframe class="map-frame" src="https://btcmap.org/map#10/-24.9/-50.1" title="BTC Map" loading="lazy" allowfullscreen></iframe>
@@ -142,37 +172,29 @@
     </article>
 
     <aside class="hero-card">
-      <span class="card-kicker">Próxima ação</span>
-      <h2 class="hero-card-title">Pré-cadastro rápido</h2>
+      <span class="card-kicker">Já aceita bitcoin?</span>
+      <h2 class="hero-card-title">Coloque o seu local no diretório</h2>
       <form action="{{ url_for('serve_cadastro') }}" method="get" class="stack-form">
         <label class="field">
           <span>Nome do estabelecimento</span>
-          <input type="text" name="nome" placeholder="Ex.: Frederica's Koffiehuis" required>
+          <input type="text" name="nome" placeholder="Ex.: Frederica's Koffiehuis" maxlength="120" required>
         </label>
         <label class="field">
           <span>Tipo</span>
           <select name="tipo" required>
             <option value="">Selecione</option>
-            <option value="restaurant">Restaurante</option>
-            <option value="cafe">Café</option>
-            <option value="bar">Bar</option>
-            <option value="hotel">Hotel</option>
-            <option value="shop">Loja</option>
-            <option value="supermarket">Supermercado</option>
-            <option value="bakery">Padaria</option>
-            <option value="pharmacy">Farmácia</option>
-            <option value="healthcare">Saúde</option>
-            <option value="rental">Serviços e locação</option>
-            <option value="other">Outro</option>
+            {% for option in submission_types %}
+              <option value="{{ option.value }}">{{ option.label }}</option>
+            {% endfor %}
           </select>
         </label>
         <label class="field">
           <span>Endereço</span>
-          <input type="text" name="endereco" placeholder="Rua, número, cidade, UF" required>
+          <input type="text" name="endereco" placeholder="Rua, número, cidade, UF" maxlength="240" required>
         </label>
         <label class="field">
           <span>E-mail</span>
-          <input type="email" name="email" placeholder="contato@empresa.com">
+          <input type="email" name="email" placeholder="contato@empresa.com" maxlength="160">
         </label>
         <button type="submit" class="btn btn-cta btn-full">Continuar no formulário completo</button>
       </form>
@@ -182,12 +204,12 @@
   <section class="page-panel cta-band">
     <div>
       <span class="section-kicker">Próximo passo</span>
-      <h2 class="section-heading">Se a meta é colocar mais um comércio no mapa, o fluxo começa pelo cadastro.</h2>
-      <p class="muted-text">Cadastre o local, organize a abordagem e use os materiais para conduzir a primeira ativação.</p>
+      <h2 class="section-heading">Comece pelo primeiro passo da trilha. Leva cinco minutos.</h2>
+      <p class="muted-text">Depois, teste com poucos sats, treine a equipe e só então anuncie para os clientes.</p>
     </div>
     <div class="hero-actions">
-      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar agora</a>
-      <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver diretório</a>
+      <a href="{{ step_url(learn_trail[0]) }}" class="btn btn-cta">Por que aceitar bitcoin</a>
+      <a href="{{ url_for('serve_materiais') }}" class="btn btn-secondary">Materiais para divulgar</a>
     </div>
   </section>
 {% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "aprenda/_macros.html" import trail_progress, trail_nav with context %}
+
+{% block content %}
+  <nav class="breadcrumb" aria-label="Você está em">
+    <a href="{{ url_for('serve_index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('serve_aprenda') }}">Aprenda</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ article.title }}</span>
+  </nav>
+
+  <section class="hero-section compact-hero article-hero">
+    <span class="eyebrow">{{ article.kicker }} de {{ learn_trail|length }}</span>
+    <h1 class="headline">{% block headline %}{{ article.title }}{% endblock %}</h1>
+    <p class="lead">{{ article.summary }}</p>
+    {{ trail_progress(article) }}
+  </section>
+
+  <div class="article-layout">
+    <article class="page-panel prose">
+      {% block article_body %}{% endblock %}
+    </article>
+    <div class="article-aside">
+      {% block aside %}{% endblock %}
+    </div>
+  </div>
+
+  {{ trail_nav(previous_step, next_step) }}
+{% endblock %}

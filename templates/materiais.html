@@ -43,7 +43,7 @@
         <div class="card-grid">
           {% for item in material_downloads %}
             <article class="resource-card">
-              <img src="{{ url_for('static', filename=item.preview) }}" alt="{{ item.title }}" class="resource-preview">
+              <img src="{{ url_for('static', filename=item.preview) }}" alt="{{ item.title }}" class="resource-preview" loading="lazy">
               <div class="resource-body">
                 <h3>{{ item.title }}</h3>
                 <p>{{ item.description }}</p>
@@ -83,7 +83,7 @@
     </article>
 
     <aside class="hero-card">
-      <img src="{{ url_for('static', filename='img/materiais_sucesso_fredericas.png') }}" alt="Aplicação de material em estabelecimento" class="support-image">
+      <img src="{{ url_for('static', filename='img/materiais_sucesso_fredericas.png') }}" alt="Aplicação de material em estabelecimento" class="support-image" loading="lazy">
     </aside>
   </section>
 {% endblock %}

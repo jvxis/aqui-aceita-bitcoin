@@ -1,0 +1,59 @@
+{% macro step_url(step) -%}
+  {%- if step.slug -%}{{ url_for(step.endpoint, slug=step.slug) }}{%- else -%}{{ url_for(step.endpoint) }}{%- endif -%}
+{%- endmacro %}
+
+{% macro trail_progress(current) %}
+  <ol class="trail-progress" aria-label="Trilha Aprenda">
+    {% for step in learn_trail %}
+      <li class="{% if current and step.title == current.title %}is-current{% endif %}">
+        <a href="{{ step_url(step) }}"{% if current and step.title == current.title %} aria-current="step"{% endif %}>
+          <span class="trail-number">{{ loop.index }}</span>
+          <span class="trail-label">{{ step.title }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+{% endmacro %}
+
+{% macro trail_nav(previous_step, next_step) %}
+  <nav class="trail-nav" aria-label="Navegação da trilha">
+    {% if previous_step %}
+      <a href="{{ step_url(previous_step) }}" class="trail-nav-link is-previous">
+        <small>Anterior</small>
+        <strong>{{ previous_step.title }}</strong>
+      </a>
+    {% else %}
+      <a href="{{ url_for('serve_aprenda') }}" class="trail-nav-link is-previous">
+        <small>Voltar</small>
+        <strong>Visão geral da trilha</strong>
+      </a>
+    {% endif %}
+    {% if next_step %}
+      <a href="{{ step_url(next_step) }}" class="trail-nav-link is-next">
+        <small>Próximo passo</small>
+        <strong>{{ next_step.title }}</strong>
+      </a>
+    {% else %}
+      <a href="{{ url_for('serve_cadastro') }}" class="trail-nav-link is-next">
+        <small>Pronto para começar?</small>
+        <strong>Cadastre o seu local</strong>
+      </a>
+    {% endif %}
+  </nav>
+{% endmacro %}
+
+{% macro related_card(links) %}
+  <aside class="hero-card related-card">
+    <span class="card-kicker">Leia também</span>
+    <ul class="related-list">
+      {% for link in links %}
+        <li>
+          <a href="{{ link.url }}"{% if link.external %} target="_blank" rel="noopener"{% endif %}>
+            <strong>{{ link.title }}</strong>
+            <span>{{ link.text }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+{% endmacro %}

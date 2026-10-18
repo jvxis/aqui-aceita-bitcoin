@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% from "aprenda/_macros.html" import step_url with context %}
+
+{% block content %}
+  <section class="hero-section compact-hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Aprenda</span>
+        <h1 class="headline">Aceitar bitcoin, passo a passo.</h1>
+        <p class="lead">
+          Cinco páginas curtas, em português, para comerciantes e para quem quer começar a usar bitcoin no dia a dia.
+          Leia na ordem ou vá direto ao que precisa.
+        </p>
+        <div class="hero-actions">
+          <a href="{{ step_url(learn_trail[0]) }}" class="btn btn-cta">Começar pelo passo 1</a>
+          <a href="#glossario" class="btn btn-secondary">Ver o glossário</a>
+        </div>
+      </div>
+      <aside class="hero-card">
+        <span class="card-kicker">Sem pressa</span>
+        <h2 class="hero-card-title">Teste com poucos sats, entenda o backup e só depois anuncie.</h2>
+        <p>Nada aqui é recomendação de investimento: o foco é receber pagamentos com segurança.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="page-panel">
+    <span class="section-kicker">A trilha</span>
+    <h2 class="section-heading">Cinco passos</h2>
+    <div class="trail-grid">
+      {% for step in learn_trail %}
+        <a href="{{ step_url(step) }}" class="step-card trail-card">
+          <span class="step-index">{{ "%02d"|format(loop.index) }}</span>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.summary }}</p>
+          <span class="inline-link">Ler <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="page-grid">
+    <article class="page-panel prose" id="glossario">
+      <span class="section-kicker">Glossário</span>
+      <h2 class="section-heading">As palavras que você vai encontrar</h2>
+      <dl class="glossary">
+        <dt>Bitcoin (BTC)</dt>
+        <dd>O dinheiro digital e a rede onde ele circula. Ninguém controla sozinho.</dd>
+        <dt>Sat (satoshi)</dt>
+        <dd>A menor parte do bitcoin. 1 bitcoin tem 100 milhões de sats.</dd>
+        <dt>On-chain</dt>
+        <dd>Transação na rede principal do bitcoin. Entra num bloco, em média a cada 10 minutos, e a taxa varia com a procura.</dd>
+        <dt>Lightning</dt>
+        <dd>Rede de pagamentos rápidos construída em cima do bitcoin. O pagamento chega em segundos, com taxa pequena.</dd>
+        <dt>Carteira</dt>
+        <dd>O app que guarda o acesso aos seus bitcoins e faz os pagamentos.</dd>
+        <dt>Custódia de terceiros</dt>
+        <dd>Uma empresa guarda os bitcoins por você. Mais simples, mas você depende dela.</dd>
+        <dt>Autocustódia</dt>
+        <dd>Só você tem as chaves. Mais controle e mais responsabilidade com o backup.</dd>
+        <dt>Frase de recuperação</dt>
+        <dd>As 12 ou 24 palavras que restauram uma carteira de autocustódia. Quem tem as palavras tem os bitcoins.</dd>
+        <dt>Fatura (invoice)</dt>
+        <dd>Pedido de pagamento Lightning com valor fixo, de uso único e com prazo para vencer.</dd>
+        <dt>Endereço Lightning</dt>
+        <dd>Endereço fixo no formato de e-mail (nome@dominio) para receber pela Lightning.</dd>
+        <dt>Confirmação</dt>
+        <dd>Quando uma transação on-chain entra num bloco. Antes disso, ela está pendente.</dd>
+        <dt>Node</dt>
+        <dd>Computador que roda o software do bitcoin ou da Lightning. Ter o próprio é opcional e dá independência total.</dd>
+      </dl>
+    </article>
+
+    <aside class="hero-card">
+      <span class="card-kicker">Do BR⚡LN, grátis</span>
+      <h2 class="hero-card-title">Ferramentas para praticar</h2>
+      <ul class="related-list">
+        <li>
+          <a href="{{ brln_url('faucet/') }}" target="_blank" rel="noopener">
+            <strong>Faucet</strong>
+            <span>Sats grátis por dia para o primeiro teste.</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ brln_url('ferramentas/') }}" target="_blank" rel="noopener">
+            <strong>Ferramentas</strong>
+            <span>Decodificador de faturas, explorador de nodes e mais.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://pay.br-ln.com/" target="_blank" rel="noopener">
+            <strong>pay.br-ln.com</strong>
+            <span>Endereço Lightning grátis para quem tem node próprio ou LNbits.</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ brln_url('guias/') }}" target="_blank" rel="noopener">
+            <strong>Guias</strong>
+            <span>Carteiras, endereço Lightning, autocustódia e node, em português.</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+  </section>
+
+  <section class="page-panel faq-panel">
+    <span class="section-kicker">Perguntas frequentes</span>
+    <h2 class="section-heading">Dúvidas de quem está começando</h2>
+    <div class="faq-stack">
+      <details>
+        <summary>Preciso de maquininha ou de algum cadastro especial?</summary>
+        <p>
+          Não. Para receber, basta um celular com uma carteira. As regras do seu negócio, como nota fiscal e impostos,
+          continuam as mesmas.
+        </p>
+      </details>
+      <details>
+        <summary>É permitido aceitar bitcoin no Brasil?</summary>
+        <p>
+          Não há proibição de aceitar bitcoin como pagamento por produtos e serviços. Anuncie o preço em reais e registre
+          a venda normalmente. Para nota fiscal e declaração de criptoativos, converse com o seu contador.
+        </p>
+      </details>
+      <details>
+        <summary>Quanto custa?</summary>
+        <p>
+          Instalar uma carteira é grátis. Na Lightning, as taxas costumam ser pequenas; algumas carteiras cobram quando
+          precisam abrir ou ampliar o canal. No on-chain, a taxa varia com o movimento da rede. Veja a tabela de cada
+          carteira antes de escolher.
+        </p>
+      </details>
+      <details>
+        <summary>E se o preço do bitcoin cair?</summary>
+        <p>
+          Pode cair, e pode subir. Por isso vale decidir antes o que fazer com o que entra, como converter uma parte para
+          reais. O projeto não recomenda investimento: o foco é receber pagamentos.
+        </p>
+      </details>
+      <details>
+        <summary>Preciso montar um node?</summary>
+        <p>
+          Não para começar. O node próprio é para quem quer independência total, e o BR⚡LN tem um
+          <a href="{{ brln_url('guias/como-montar-um-node-lightning/') }}" target="_blank" rel="noopener">guia para montar o seu</a>.
+        </p>
+      </details>
+      <details>
+        <summary>Onde peço ajuda?</summary>
+        <p>
+          Na comunidade do <a href="{{ brln_url() }}" target="_blank" rel="noopener">BR⚡LN</a> ou pelo e-mail
+          <a href="mailto:suporte.brln@gmail.com">suporte.brln@gmail.com</a>. Lembre: ninguém do suporte pede a sua frase
+          de recuperação.
+        </p>
+      </details>
+    </div>
+  </section>
+{% endblock %}

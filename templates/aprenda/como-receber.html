@@ -1,0 +1,105 @@
+{% extends "aprenda/_artigo.html" %}
+{% from "aprenda/_macros.html" import related_card with context %}
+
+{% block article_body %}
+  <h2>Os jeitos de cobrar</h2>
+
+  <div class="option-stack">
+    <section class="option-card">
+      <span class="pill">Recomendado no balcão</span>
+      <h3>Fatura Lightning</h3>
+      <p>
+        O caixa digita o valor em reais, o app converte para sats e mostra um QR code. O cliente lê com a carteira
+        dele e paga. A fatura tem valor fixo, serve para um pagamento só e expira depois de um tempo, que depende do
+        app. Em texto, ela começa com <code>lnbc</code>.
+      </p>
+      <p class="muted-text">Por que é a melhor no caixa: o valor vem certo, sem o cliente precisar digitar nada.</p>
+    </section>
+
+    <section class="option-card">
+      <span class="pill">Fixo e reutilizável</span>
+      <h3>Endereço Lightning</h3>
+      <p>
+        Parece um e-mail, como <code>loja@exemplo.com</code>. Não muda: o cliente digita ou escaneia e escolhe o
+        valor. Serve para cartão de visita, delivery, gorjeta e cobrança à distância. Muitas carteiras dão um de graça.
+      </p>
+      <p class="muted-text">
+        Tem um node Lightning próprio (LND) ou LNbits? Crie um endereço grátis em
+        <a href="https://pay.br-ln.com/" target="_blank" rel="noopener">pay.br-ln.com</a>, do BR⚡LN.
+      </p>
+    </section>
+
+    <section class="option-card">
+      <span class="pill">Prático, com atenção</span>
+      <h3>QR fixo impresso</h3>
+      <p>
+        Um QR no balcão que não muda (em geral, um endereço Lightning ou um código LNURL). É prático, mas é o cliente
+        quem digita o valor: confira no seu app o que entrou antes de liberar a mercadoria. E de vez em quando
+        verifique se ninguém colou um QR falso por cima do seu.
+      </p>
+    </section>
+
+    <section class="option-card">
+      <span class="pill">Para valores maiores</span>
+      <h3>On-chain (endereço bitcoin)</h3>
+      <p>
+        O endereço começa com <code>bc1</code> (ou 1 e 3, nos formatos antigos). A transação aparece primeiro como
+        pendente e só vale depois de entrar num bloco, o que leva em média 10 minutos e pode demorar mais quando a taxa
+        paga é baixa. Para valores altos, espere ao menos uma confirmação antes de entregar. A carteira gera um
+        endereço novo a cada recebimento: use sempre o novo, por privacidade.
+      </p>
+    </section>
+
+    <section class="option-card">
+      <span class="pill">Ainda pouco comum</span>
+      <h3>Por aproximação (NFC)</h3>
+      <p>
+        Cartões Lightning, como o Bolt Card, pagam encostando no celular ou no terminal. Exige um app de ponto de venda
+        compatível dos dois lados.
+      </p>
+    </section>
+  </div>
+
+  <h2>Como conferir se o pagamento chegou</h2>
+  <ul>
+    <li>
+      <strong>Sempre na tela do seu app, nunca no celular do cliente.</strong> Print, tela de “pagamento enviado” e
+      comprovante podem ser falsos.
+    </li>
+    <li>Na Lightning, o “recebido” aparece em segundos. Se não aparecer, não entregue: gere outra cobrança.</li>
+    <li>No on-chain, “pendente” ainda não é pago.</li>
+    <li>Confira o valor em reais e em sats antes de dar a venda por encerrada.</li>
+  </ul>
+
+  <h2>Dicas para o dia a dia do caixa</h2>
+  <ul>
+    <li><strong>Cobre em reais.</strong> O preço é o da etiqueta; o app converte na hora da venda.</li>
+    <li><strong>Uma fatura por venda.</strong> Se ela expirar, gere outra; não reaproveite.</li>
+    <li>
+      <strong>Não existe troco.</strong> Devolução é um novo pagamento: peça uma fatura ou o endereço Lightning do
+      cliente e envie o valor combinado.
+    </li>
+    <li>
+      <strong>Use o modo de ponto de venda</strong>, se a carteira tiver: nele o aparelho só recebe, e a equipe não
+      consegue enviar fundos.
+    </li>
+    <li><strong>Internet.</strong> O celular do caixa precisa estar conectado para gerar e confirmar a cobrança.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Quer ver o que tem dentro de uma fatura?</strong>
+    <p>
+      O decodificador de faturas das <a href="{{ brln_url('ferramentas/') }}" target="_blank" rel="noopener">ferramentas
+      grátis do BR⚡LN</a> mostra os dados de uma fatura Lightning, como o valor e a validade, antes de você pagar ou
+      cobrar.
+    </p>
+  </div>
+{% endblock %}
+
+{% block aside %}
+  {{ related_card([
+    {"title": "Endereço Lightning", "text": "O que é e como ter o seu, no guia do BR⚡LN.", "url": brln_url("guias/lightning-address/"), "external": True},
+    {"title": "pay.br-ln.com", "text": "Endereço Lightning grátis para quem tem node próprio ou LNbits.", "url": "https://pay.br-ln.com/", "external": True},
+    {"title": "Ferramentas grátis", "text": "Decodificador de faturas, explorador e outras.", "url": brln_url("ferramentas/"), "external": True},
+  ]) }}
+{% endblock %}
