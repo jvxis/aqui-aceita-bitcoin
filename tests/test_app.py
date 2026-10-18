@@ -324,3 +324,15 @@ def test_gerenciar_lista_pendentes(client, app_module, capsys):
     assert gerenciar.main(["pendentes"]) == 0
     saida = capsys.readouterr().out
     assert "Padaria do Teste" in saida and "[pendente]" in saida
+
+
+def test_analytics_only_through_consent_script(client):
+    response = client.get("/")
+    html = response.get_data(as_text=True)
+    csp = response.headers["Content-Security-Policy"]
+    assert 'data-analytics-id="G-ZQVS83N61C"' in html
+    assert 'id="consent-banner"' in html
+    # A tag do Google nunca vem no HTML: só o privacy.js a carrega, depois do "Aceitar".
+    assert "googletagmanager.com/gtag/js" not in html
+    assert "script-src 'self' https://www.googletagmanager.com" in csp
+    assert "https://*.google-analytics.com" in csp

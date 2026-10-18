@@ -64,7 +64,20 @@
     {% include 'partials/footer.html' %}
   </div>
 
+  {% if analytics_id %}
+  <div class="consent-banner" id="consent-banner" role="region" aria-label="Aviso de cookies" hidden>
+    <p>Usamos o Google Analytics para contar visitas e saber quais páginas ajudam mais. Só ativamos se você aceitar.</p>
+    <div class="consent-actions">
+      <button type="button" class="consent-btn consent-btn--ghost" id="consent-reject">Recusar</button>
+      <button type="button" class="consent-btn" id="consent-accept">Aceitar</button>
+    </div>
+  </div>
+  {% endif %}
+
   {% block extra_data %}{% endblock %}
+  {% if analytics_id %}
+  <script src="{{ url_for('static', filename='js/privacy.js') }}" data-analytics-id="{{ analytics_id }}"></script>
+  {% endif %}
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   {% block extra_scripts %}{% endblock %}
 </body>

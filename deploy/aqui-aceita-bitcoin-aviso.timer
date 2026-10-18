@@ -1,0 +1,10 @@
+[Unit]
+Description=Aceita Bitcoin? - confere cadastros pendentes a cada 15 minutos
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+Unit=aqui-aceita-bitcoin-aviso.service
+
+[Install]
+WantedBy=timers.target

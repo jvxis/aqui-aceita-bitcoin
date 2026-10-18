@@ -460,15 +460,21 @@ TEAM = [
     },
 ]
 
+# Google Analytics 4 da propriedade "aceita-bitcoin" (conta BRLN). Carrega so depois que o visitante
+# aceita no aviso de cookies (static/js/privacy.js); vazio desliga. A tag tinha saido numa refatoracao
+# visual antiga, e a propriedade ficou sem dados ate 18/10/2026.
+ANALYTICS_ID = (os.getenv("GA_MEASUREMENT_ID", "G-ZQVS83N61C") or "").strip()
+GA_HOSTS = "https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com"
+
 CONTENT_SECURITY_POLICY = "; ".join(
     [
         "default-src 'self'",
-        "script-src 'self'",
+        "script-src 'self' https://www.googletagmanager.com",
         "style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-        "img-src 'self' data:",
+        "img-src 'self' data: " + GA_HOSTS,
         "frame-src https://btcmap.org",
-        "connect-src 'self'",
+        "connect-src 'self' " + GA_HOSTS,
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
@@ -880,6 +886,7 @@ def inject_site_context():
         "submission_types": SUBMISSION_TYPE_OPTIONS,
         "learn_trail": LEARN_TRAIL,
         "current_year": datetime.now().year,
+        "analytics_id": ANALYTICS_ID,
         "site_name": "Aceita Bitcoin? / BR⚡LN",
         "site_url": app.config["SITE_URL"],
         "canonical_url": canonical_url(),

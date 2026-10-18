@@ -1,0 +1,19 @@
+# Aviso por e-mail de cadastro esperando aprovacao (avisar_pendentes.py). Instalar junto com o .timer:
+#   cp deploy/aqui-aceita-bitcoin-aviso.* /etc/systemd/system/ && systemctl daemon-reload
+#   systemctl enable --now aqui-aceita-bitcoin-aviso.timer
+# Precisa de AVISO_PARA em /etc/aqui-aceita-bitcoin.env (ou no .env da pasta).
+[Unit]
+Description=Aceita Bitcoin? - aviso de cadastro pendente
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=webuser
+Group=webuser
+WorkingDirectory=/home/webuser/aqui-aceita-bitcoin
+EnvironmentFile=-/etc/aqui-aceita-bitcoin.env
+ExecStart=/home/webuser/aqui-aceita-bitcoin/venv/bin/python avisar_pendentes.py run
+TimeoutStartSec=120
+NoNewPrivileges=true
+PrivateTmp=true
