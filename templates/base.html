@@ -6,20 +6,20 @@
   <title>{{ page_title }}</title>
   <meta name="description" content="{{ page_description }}">
   <meta name="robots" content="index,follow">
-  <meta name="author" content="BRLN">
-  <meta name="theme-color" content="#08111f">
+  <meta name="author" content="BR⚡LN">
+  <meta name="theme-color" content="#0d1728">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ site_name }}">
   <meta property="og:title" content="{{ page_title }}">
   <meta property="og:description" content="{{ page_description }}">
-  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:url" content="{{ canonical_url }}">
   <meta property="og:image" content="{{ social_image_url }}">
   <meta property="og:locale" content="pt_BR">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ page_title }}">
   <meta name="twitter:description" content="{{ page_description }}">
   <meta name="twitter:image" content="{{ social_image_url }}">
-  <link rel="canonical" href="{{ request.url }}">
+  <link rel="canonical" href="{{ canonical_url }}">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,9 +30,9 @@
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "{{ site_name }}",
-      "url": "{{ site_url }}",
-      "logo": "{{ social_image_url }}",
+      "name": {{ site_name|tojson }},
+      "url": {{ site_url|tojson }},
+      "logo": {{ social_image_url|tojson }},
       "sameAs": [
         "https://br-ln.com/",
         "https://services.br-ln.com/",
@@ -45,8 +45,8 @@
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "{{ site_name }}",
-      "url": "{{ site_url }}"
+      "name": {{ site_name|tojson }},
+      "url": {{ site_url|tojson }}
     }
   </script>
   {% block extra_head %}{% endblock %}
@@ -64,6 +64,7 @@
     {% include 'partials/footer.html' %}
   </div>
 
+  {% block extra_data %}{% endblock %}
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   {% block extra_scripts %}{% endblock %}
 </body>

@@ -4,31 +4,18 @@
   <section class="hero-section compact-hero directory-hero">
     <div class="hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow">Diretório público</span>
-        <h1 class="headline">Locais que já aceitam Bitcoin</h1>
+        <span class="eyebrow">Diretório</span>
+        <h1 class="headline">Onde aceita bitcoin</h1>
         <p class="lead">
-          Use o diretório para descobrir pontos ativos, reforçar prova social e acompanhar a expansão da iniciativa.
+          Locais que aceitam bitcoin cadastrados no projeto. Filtre por nome, cidade, tipo de negócio e forma de
+          pagamento, e confirme no balcão antes de pagar.
         </p>
       </div>
       <aside class="hero-card">
-        <span class="card-kicker">Base atual</span>
-        <h2 class="hero-card-title">{{ establishments|length }} registros públicos catalogados.</h2>
-        <p class="muted-text">A lista abaixo pode ser filtrada por nome, tipo de negócio e forma de recebimento.</p>
+        <span class="card-kicker">Hoje</span>
+        <h2 class="hero-card-title">{{ establishments|length }} {{ "local" if establishments|length == 1 else "locais" }} no diretório.</h2>
+        <p class="muted-text">Aceita bitcoin no seu negócio? <a href="{{ url_for('serve_cadastro') }}" class="inline-link">Cadastre o local</a>.</p>
       </aside>
-    </div>
-  </section>
-
-  <section class="page-panel map-panel directory-map-panel">
-    <div class="section-heading-row">
-      <div>
-        <span class="section-kicker">Mapa</span>
-        <h2 class="section-heading">Visão rápida dos estabelecimentos no BTC Map</h2>
-      </div>
-      <a href="https://btcmap.org/map#6/-23.7/-48.7" target="_blank" rel="noopener" class="btn btn-secondary">Abrir mapa completo</a>
-    </div>
-    <p class="muted-text">O mapa funciona como visão geral. A lista abaixo continua sendo a referência para detalhes e filtros do diretório.</p>
-    <div class="map-shell">
-      <iframe class="map-frame" src="https://btcmap.org/map#6/-23.7/-48.7" title="BTC Map de estabelecimentos" loading="lazy" allowfullscreen></iframe>
     </div>
   </section>
 
@@ -42,17 +29,9 @@
         <span>Tipo</span>
         <select id="directoryType">
           <option value="">Todos</option>
-          <option value="restaurant">Restaurante</option>
-          <option value="cafe">Café</option>
-          <option value="bar">Bar</option>
-          <option value="hotel">Hotel</option>
-          <option value="shop">Loja</option>
-          <option value="supermarket">Supermercado</option>
-          <option value="bakery">Padaria</option>
-          <option value="pharmacy">Farmácia</option>
-          <option value="healthcare">Saúde</option>
-          <option value="rental">Serviços e locação</option>
-          <option value="other">Outro</option>
+          {% for option in submission_types %}
+            <option value="{{ option.value }}">{{ option.label }}</option>
+          {% endfor %}
         </select>
       </label>
       <label class="field field-inline">
@@ -61,23 +40,38 @@
           <option value="">Todos</option>
           <option value="lightning">Lightning</option>
           <option value="onchain">On-chain</option>
-          <option value="contactless">Contactless</option>
+          <option value="contactless">Por aproximação (NFC)</option>
         </select>
       </label>
     </div>
 
-    <div id="establishmentsDirectory" class="card-grid directory-grid"></div>
+    <div id="establishmentsDirectory" class="card-grid directory-grid" aria-live="polite"></div>
 
     <div id="directoryEmptyState" class="empty-state" {% if establishments %}hidden{% endif %}>
-      <h2>Nenhum estabelecimento cadastrado ainda.</h2>
-      <p>O diretório público ainda está começando. Use o novo fluxo de cadastro para alimentar a base.</p>
-      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar primeiro local</a>
+      <h2>Nenhum local encontrado.</h2>
+      <p>Mude os filtros ou cadastre um estabelecimento que já aceita bitcoin.</p>
+      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar um local</a>
+    </div>
+  </section>
+
+  <section class="page-panel map-panel directory-map-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Mapa</span>
+        <h2 class="section-heading">Visão geral no BTC Map</h2>
+      </div>
+      <a href="https://btcmap.org/map#6/-23.7/-48.7" target="_blank" rel="noopener" class="btn btn-secondary">Abrir mapa completo</a>
+    </div>
+    <p class="muted-text">
+      O BTC Map é um mapa mundial e independente, feito com dados do OpenStreetMap. Para incluir o seu local nele, use o
+      próprio site do BTC Map.
+    </p>
+    <div class="map-shell">
+      <iframe class="map-frame" src="https://btcmap.org/map#6/-23.7/-48.7" title="BTC Map de estabelecimentos" loading="lazy" allowfullscreen></iframe>
     </div>
   </section>
 {% endblock %}
 
-{% block extra_scripts %}
-  <script>
-    window.establishmentsData = {{ establishments|tojson }};
-  </script>
+{% block extra_data %}
+  <script type="application/json" id="establishments-data">{{ establishments|tojson }}</script>
 {% endblock %}

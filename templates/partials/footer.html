@@ -2,18 +2,18 @@
   <div class="footer-grid">
     <div class="footer-card">
       <h3>Aceita Bitcoin?</h3>
-      <p>Frente de ativação comercial com visual, onboarding e suporte alinhados ao padrão BRLN.</p>
+      <p>Projeto educativo do BR⚡LN para quem quer aceitar bitcoin no comércio ou começar a usar no dia a dia, com segurança e sem promessa de ganho.</p>
       <div class="social-row">
         {% for item in site_social_links %}
           <a href="{{ item.url }}" target="_blank" rel="noopener" aria-label="{{ item.label }}">
-            <i class="{{ item.icon }}"></i>
+            <i class="{{ item.icon }}" aria-hidden="true"></i>
           </a>
         {% endfor %}
       </div>
     </div>
 
     <div class="footer-card">
-      <h3>Links rápidos</h3>
+      <h3>Do BR⚡LN, grátis</h3>
       <ul class="footer-list">
         {% for item in site_footer_links %}
           <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
@@ -33,6 +33,6 @@
 
   <div class="footer-bottom">
     <span>© {{ current_year }} Aceita Bitcoin? / BR⚡LN</span>
-    <span>Feito para ativação local com Bitcoin e Lightning.</span>
+    <span>Conteúdo educativo. Nada aqui é recomendação de investimento.</span>
   </div>
 </footer>

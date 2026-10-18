@@ -4,12 +4,13 @@
   <section class="page-grid">
     <article class="page-panel form-panel">
       <span class="section-kicker">Cadastro</span>
-      <h1 class="section-heading">Adicionar um estabelecimento ao projeto</h1>
+      <h1 class="section-heading">Adicionar um estabelecimento ao diretório</h1>
       <p class="lead">
-        Preencha os dados essenciais para organizar a ativação, registrar o local publicamente e preparar a próxima etapa com o comerciante.
+        Preencha os dados do local que já aceita bitcoin.
+        {% if moderated %}A equipe revisa cada cadastro antes de publicar, para o diretório só mostrar locais que aceitam de verdade.{% endif %}
       </p>
 
-      <div id="formFeedback" class="message-box" hidden></div>
+      <div id="formFeedback" class="message-box" role="status" aria-live="polite" hidden></div>
 
       <form id="cadastroForm" class="stack-form" enctype="multipart/form-data">
         <input type="hidden" name="submission_token" value="{{ submission_token }}">
@@ -22,47 +23,40 @@
         <div class="form-two-columns">
           <label class="field">
             <span>Nome do estabelecimento *</span>
-            <input type="text" id="nomeEstabelecimento" name="nome" value="{{ prefill.nome }}" required>
+            <input type="text" id="nomeEstabelecimento" name="nome" value="{{ prefill.nome }}" maxlength="{{ field_limits.nome }}" autocomplete="organization" required>
           </label>
           <label class="field">
             <span>Tipo *</span>
             <select id="tipoEstabelecimento" name="tipo" required>
               <option value="">Selecione</option>
-              <option value="restaurant" {% if prefill.tipo == 'restaurant' %}selected{% endif %}>Restaurante</option>
-              <option value="cafe" {% if prefill.tipo == 'cafe' %}selected{% endif %}>Café</option>
-              <option value="bar" {% if prefill.tipo == 'bar' %}selected{% endif %}>Bar</option>
-              <option value="hotel" {% if prefill.tipo == 'hotel' %}selected{% endif %}>Hotel</option>
-              <option value="shop" {% if prefill.tipo == 'shop' %}selected{% endif %}>Loja</option>
-              <option value="supermarket" {% if prefill.tipo == 'supermarket' %}selected{% endif %}>Supermercado</option>
-              <option value="bakery" {% if prefill.tipo == 'bakery' %}selected{% endif %}>Padaria</option>
-              <option value="pharmacy" {% if prefill.tipo == 'pharmacy' %}selected{% endif %}>Farmácia</option>
-              <option value="healthcare" {% if prefill.tipo == 'healthcare' %}selected{% endif %}>Saúde</option>
-              <option value="rental" {% if prefill.tipo == 'rental' %}selected{% endif %}>Serviços e locação</option>
-              <option value="other" {% if prefill.tipo == 'other' %}selected{% endif %}>Outro</option>
+              {% for option in submission_types %}
+                <option value="{{ option.value }}" {% if prefill.tipo == option.value %}selected{% endif %}>{{ option.label }}</option>
+              {% endfor %}
             </select>
           </label>
         </div>
 
         <label class="field">
           <span>Endereço *</span>
-          <input type="text" id="endereco" name="endereco" value="{{ prefill.endereco }}" required>
+          <input type="text" id="endereco" name="endereco" value="{{ prefill.endereco }}" maxlength="{{ field_limits.endereco }}" placeholder="Rua, número, cidade, UF" autocomplete="street-address" required>
         </label>
 
         <div class="form-two-columns">
           <label class="field">
             <span>E-mail</span>
-            <input type="email" id="email" name="email" value="{{ prefill.email }}">
+            <input type="email" id="email" name="email" value="{{ prefill.email }}" maxlength="{{ field_limits.email }}" autocomplete="email">
           </label>
           <label class="field">
             <span>Telefone</span>
-            <input type="tel" id="telefone" name="telefone" placeholder="+55 43 99999-9999">
+            <input type="tel" id="telefone" name="telefone" maxlength="{{ field_limits.telefone }}" placeholder="+55 43 99999-9999" autocomplete="tel">
           </label>
         </div>
+        <p class="field-hint">E-mail e telefone não aparecem no site: servem só para a equipe falar com você.</p>
 
         <div class="form-two-columns">
           <label class="field">
-            <span>Website</span>
-            <input type="url" id="website" name="website" placeholder="https://">
+            <span>Website ou Instagram</span>
+            <input type="url" id="website" name="website" maxlength="{{ field_limits.website }}" placeholder="https://" inputmode="url">
           </label>
           <label class="field">
             <span>Data da verificação</span>
@@ -73,6 +67,7 @@
         <label class="field">
           <span>Logo do estabelecimento</span>
           <input type="file" id="logoEstabelecimento" name="logo" accept=".png,.jpg,.jpeg,.gif,.webp">
+          <small class="field-hint">PNG, JPG, GIF ou WEBP, até 5 MB.</small>
         </label>
 
         <fieldset class="choice-group">
@@ -87,34 +82,36 @@
           </label>
           <label class="choice-item">
             <input type="checkbox" id="acceptsLightningContactless" name="aceita_contactless">
-            <span>Lightning contactless</span>
+            <span>Lightning por aproximação (NFC)</span>
           </label>
         </fieldset>
 
         <label class="field">
           <span>Observações</span>
-          <textarea id="observacoes" name="observacoes" rows="5" placeholder="Contexto do onboarding, detalhes operacionais, necessidade de visita, observações úteis para o time."></textarea>
+          <textarea id="observacoes" name="observacoes" rows="5" maxlength="{{ field_limits.observacoes }}" placeholder="Horário, carteira usada, se precisa de visita da equipe, qualquer detalhe útil."></textarea>
         </label>
 
         <div class="action-row">
-          <button type="submit" class="btn btn-cta">Salvar cadastro</button>
+          <button type="submit" class="btn btn-cta">Enviar cadastro</button>
           <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver diretório</a>
         </div>
       </form>
     </article>
 
     <aside class="hero-card">
-      <span class="card-kicker">Depois do cadastro</span>
-      <h2 class="hero-card-title">O objetivo é tirar o local do estado de interesse e levar para o estado de operação.</h2>
+      <span class="card-kicker">Antes de cadastrar</span>
+      <h2 class="hero-card-title">O local já recebeu um pagamento de teste?</h2>
       <ul class="feature-list">
-        <li>Centralizar os dados do estabelecimento.</li>
-        <li>Registrar o tipo de recebimento disponível.</li>
-        <li>Preparar a publicação pública do local.</li>
-        <li>Organizar uma eventual visita de ativação.</li>
+        <li>A carteira está instalada e a equipe sabe cobrar.</li>
+        <li>Um pagamento de teste foi recebido e conferido no app do caixa.</li>
+        <li>O backup da carteira está guardado, se ela tiver frase de recuperação.</li>
       </ul>
       <div class="notice-box">
-        <strong>Recomendação prática</strong>
-        <p>Se possível, valide o fluxo de cobrança junto com a equipe antes de divulgar o local como ativo para o público.</p>
+        <strong>Ainda não chegou lá?</strong>
+        <p>
+          Veja as <a href="{{ url_for('serve_carteiras') }}" class="inline-link">carteiras recomendadas</a> e faça um
+          pagamento de teste antes de cadastrar.
+        </p>
       </div>
     </aside>
   </section>

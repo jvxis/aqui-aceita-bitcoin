@@ -17,6 +17,22 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value || ""), window.location.origin);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function localDateISO() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 function renderBadges(establishment) {
   const badges = [];
   if (establishment.accepts_lightning) {
@@ -26,27 +42,33 @@ function renderBadges(establishment) {
     badges.push('<span class="payment-badge is-onchain">On-chain</span>');
   }
   if (establishment.accepts_contactless) {
-    badges.push('<span class="payment-badge is-contactless">Contactless</span>');
+    badges.push('<span class="payment-badge is-contactless">Por aproximação</span>');
   }
   return badges.join("");
 }
 
 function establishmentCardTemplate(establishment) {
-  const website = establishment.website
-    ? `<a href="${escapeHtml(establishment.website)}" target="_blank" rel="noopener" class="inline-link">Abrir site</a>`
+  const websiteUrl = establishment.website ? safeHttpUrl(establishment.website) : "";
+  const website = websiteUrl
+    ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener nofollow ugc" class="inline-link">Abrir site</a>`
     : "";
+  const logoUrl = safeHttpUrl(establishment.logo_url);
+  const pilotPill = establishment.pilot ? '<span class="pill pill-brand">Caso piloto</span>' : "";
 
   return `
     <article class="establishment-card">
       <div class="establishment-logo-wrap">
-        <img src="${escapeHtml(establishment.logo_url)}" alt="${escapeHtml(establishment.name)}" class="establishment-logo">
+        ${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(establishment.name)}" class="establishment-logo" loading="lazy">` : ""}
       </div>
       <div class="establishment-body">
-        <span class="pill">${escapeHtml(establishment.type_label)}</span>
+        <div class="badge-row">
+          <span class="pill">${escapeHtml(establishment.type_label)}</span>
+          ${pilotPill}
+        </div>
         <h3>${escapeHtml(establishment.name)}</h3>
         <p>${escapeHtml(establishment.address)}</p>
         <div class="meta-row">
-          <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(establishment.city_label)}</span>
+          <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(establishment.city_label)}</span>
         </div>
         <div class="badge-row">${renderBadges(establishment)}</div>
         ${website}
@@ -63,14 +85,21 @@ function initMobileMenu() {
     return;
   }
 
-  toggle.addEventListener("click", () => {
-    const isOpen = !menu.hasAttribute("hidden");
-    if (isOpen) {
-      menu.setAttribute("hidden", "");
-      toggle.setAttribute("aria-expanded", "false");
-    } else {
+  function setOpen(open) {
+    if (open) {
       menu.removeAttribute("hidden");
-      toggle.setAttribute("aria-expanded", "true");
+    } else {
+      menu.setAttribute("hidden", "");
+    }
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+  }
+
+  toggle.addEventListener("click", () => setOpen(menu.hasAttribute("hidden")));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !menu.hasAttribute("hidden")) {
+      setOpen(false);
+      toggle.focus();
     }
   });
 }
@@ -84,10 +113,14 @@ function initTabs() {
       trigger.addEventListener("click", () => {
         const key = trigger.dataset.tabTrigger;
 
-        triggers.forEach((item) => item.classList.remove("is-active"));
+        triggers.forEach((item) => {
+          item.classList.remove("is-active");
+          item.setAttribute("aria-selected", "false");
+        });
         panels.forEach((panel) => panel.classList.remove("is-active"));
 
         trigger.classList.add("is-active");
+        trigger.setAttribute("aria-selected", "true");
         tabsRoot.querySelector(`[data-tab-panel="${key}"]`)?.classList.add("is-active");
       });
     });
@@ -106,15 +139,12 @@ function initCopyButtons() {
       try {
         await navigator.clipboard.writeText(target.innerText.trim());
         button.textContent = "Copiado";
-        window.setTimeout(() => {
-          button.textContent = "Copiar";
-        }, 1500);
       } catch (error) {
         button.textContent = "Falhou";
-        window.setTimeout(() => {
-          button.textContent = "Copiar";
-        }, 1500);
       }
+      window.setTimeout(() => {
+        button.textContent = "Copiar";
+      }, 1500);
     });
   });
 }
@@ -122,76 +152,22 @@ function initCopyButtons() {
 function initCadastroForm() {
   const form = document.getElementById("cadastroForm");
   const feedback = document.getElementById("formFeedback");
-  const submitButton = form?.querySelector('button[type="submit"]');
-  const defaultButtonLabel = submitButton?.textContent ?? "";
-  let isSubmitting = false;
-
   if (!form || !feedback) {
     return;
   }
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+  const submitButton = form.querySelector('button[type="submit"]');
+  const defaultButtonLabel = submitButton?.textContent ?? "";
+  const websiteInput = document.getElementById("website");
+  let isSubmitting = false;
 
-    if (isSubmitting) {
-      return;
-    }
-
-    isSubmitting = true;
-    feedback.hidden = true;
-    feedback.textContent = "";
-    form.setAttribute("aria-busy", "true");
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = "Salvando...";
-    }
-
-    const formData = new FormData(form);
-    formData.set("aceita_lightning", String(document.getElementById("acceptsLightning").checked));
-    formData.set("aceita_onchain", String(document.getElementById("acceptsOnchain").checked));
-    formData.set("aceita_contactless", String(document.getElementById("acceptsLightningContactless").checked));
-
-    try {
-      const response = await fetch("/api/estabelecimentos", {
-        method: "POST",
-        body: formData,
-      });
-
-      const responseText = await response.text();
-      let result = {};
-
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText);
-        } catch {
-          result = {};
-        }
-      }
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Não foi possível salvar o cadastro.");
-      }
-
-      showMessage(feedback, "success", result.message);
-      form.reset();
-      document.getElementById("checkDate").value = new Date().toISOString().split("T")[0];
-      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
-    } catch (error) {
-      showMessage(feedback, "error", error.message || "Erro ao enviar o cadastro.");
-      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
+  // Quem digita "www.loja.com" ganha o https:// na frente, em vez de um erro.
+  websiteInput?.addEventListener("blur", () => {
+    const value = websiteInput.value.trim();
+    if (value && !/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) {
+      websiteInput.value = `https://${value}`;
     }
   });
-}
-
-function initCadastroFormV2() {
-  const form = document.getElementById("cadastroForm");
-  const feedback = document.getElementById("formFeedback");
-  const submitButton = form?.querySelector('button[type="submit"]');
-  const defaultButtonLabel = submitButton?.textContent ?? "";
-  let isSubmitting = false;
-
-  if (!form || !feedback) {
-    return;
-  }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -206,7 +182,7 @@ function initCadastroFormV2() {
 
     if (submitButton) {
       submitButton.disabled = true;
-      submitButton.textContent = "Salvando...";
+      submitButton.textContent = "Enviando...";
     }
 
     const formData = new FormData(form);
@@ -233,20 +209,17 @@ function initCadastroFormV2() {
 
       if (!response.ok || !result.success) {
         const fallbackMessage =
-          response.status === 413
-            ? "Arquivo excede o limite de 5 MB."
-            : "Nao foi possivel salvar o cadastro.";
+          response.status === 413 ? "O arquivo passou do limite de 5 MB." : "Não foi possível salvar o cadastro.";
         throw new Error(result.message || fallbackMessage);
       }
 
       showMessage(feedback, "success", result.message);
       form.reset();
-      document.getElementById("checkDate").value = new Date().toISOString().split("T")[0];
-      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("checkDate").value = localDateISO();
     } catch (error) {
       showMessage(feedback, "error", error.message || "Erro ao enviar o cadastro.");
-      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
     } finally {
+      feedback.scrollIntoView({ behavior: "smooth", block: "start" });
       isSubmitting = false;
       form.removeAttribute("aria-busy");
 
@@ -258,9 +231,22 @@ function initCadastroFormV2() {
   });
 }
 
+function readJsonData(elementId) {
+  const element = document.getElementById(elementId);
+  if (!element) {
+    return null;
+  }
+  try {
+    return JSON.parse(element.textContent || "null");
+  } catch {
+    return null;
+  }
+}
+
 function initDirectory() {
   const root = document.getElementById("establishmentsDirectory");
-  if (!root || !Array.isArray(window.establishmentsData)) {
+  const establishments = readJsonData("establishments-data");
+  if (!root || !Array.isArray(establishments)) {
     return;
   }
 
@@ -269,12 +255,19 @@ function initDirectory() {
   const paymentInput = document.getElementById("directoryPayment");
   const emptyState = document.getElementById("directoryEmptyState");
 
+  function normalize(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase();
+  }
+
   function matchesFilters(item) {
-    const search = (searchInput?.value || "").trim().toLowerCase();
+    const search = normalize(searchInput?.value.trim());
     const selectedType = typeInput?.value || "";
     const selectedPayment = paymentInput?.value || "";
 
-    const haystack = `${item.name} ${item.address} ${item.city_label}`.toLowerCase();
+    const haystack = normalize(`${item.name} ${item.address} ${item.city_label}`);
     const matchesSearch = !search || haystack.includes(search);
     const matchesType = !selectedType || item.type === selectedType;
 
@@ -291,7 +284,7 @@ function initDirectory() {
   }
 
   function render() {
-    const filtered = window.establishmentsData.filter(matchesFilters);
+    const filtered = establishments.filter(matchesFilters);
     root.innerHTML = filtered.map(establishmentCardTemplate).join("");
 
     if (emptyState) {
@@ -308,18 +301,14 @@ function initDirectory() {
 }
 
 function initReveal() {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+    return;
+  }
+
+  // So os blocos curtos animam: texto longo (trilha Aprenda) aparece direto.
   const targets = document.querySelectorAll(
-    ".hero-section, .page-panel, .hero-card, .metric-strip, .card-grid > *, .steps-grid > *, .team-grid > *"
+    ".card-grid > *, .steps-grid > *, .trail-grid > *, .team-grid > *, .metric-strip > *"
   );
-
-  if (!targets.length) {
-    return;
-  }
-
-  if (!("IntersectionObserver" in window)) {
-    targets.forEach((element) => element.classList.add("is-visible"));
-    return;
-  }
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -332,7 +321,7 @@ function initReveal() {
         observer.unobserve(entry.target);
       });
     },
-    { threshold: 0.12 }
+    { threshold: 0, rootMargin: "0px 0px -40px 0px" }
   );
 
   targets.forEach((element) => {
@@ -345,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initMobileMenu();
   initTabs();
   initCopyButtons();
-  initCadastroFormV2();
+  initCadastroForm();
   initDirectory();
   initReveal();
 });

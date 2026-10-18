@@ -6,27 +6,27 @@
       </span>
       <span class="brand-copy">
         <strong>Aceita Bitcoin?</strong>
-        <small>Projeto local conectado ao ecossistema BR⚡LN</small>
+        <small>Projeto educativo do BR⚡LN</small>
       </span>
     </a>
 
     <nav class="nav-links" aria-label="Principal">
       {% for item in site_nav %}
-        <a href="{{ url_for(item.endpoint) }}" class="{% if request.endpoint == item.endpoint %}is-active{% endif %}">{{ item.label }}</a>
+        <a href="{{ url_for(item.endpoint) }}" class="{% if page_section(item.endpoint) %}is-active{% endif %}"{% if page_section(item.endpoint) %} aria-current="page"{% endif %}>{{ item.label }}</a>
       {% endfor %}
     </nav>
 
     <div class="nav-actions">
-      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar local</a>
+      <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta nav-cta">Cadastrar local</a>
       <button id="menu-toggle" class="menu-toggle-btn" type="button" aria-controls="mobile-nav" aria-expanded="false" aria-label="Abrir menu">
-        <i class="fa-solid fa-bars"></i>
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
     </div>
   </div>
 
   <nav id="mobile-nav" class="mobile-nav" aria-label="Menu mobile" hidden>
     {% for item in site_nav %}
-      <a href="{{ url_for(item.endpoint) }}" class="{% if request.endpoint == item.endpoint %}is-active{% endif %}">{{ item.label }}</a>
+      <a href="{{ url_for(item.endpoint) }}" class="{% if page_section(item.endpoint) %}is-active{% endif %}">{{ item.label }}</a>
     {% endfor %}
     <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar local</a>
   </nav>

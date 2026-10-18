@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="hero-section compact-hero">
+    <span class="eyebrow">Ops</span>
+    <h1 class="headline">{{ error_title }}</h1>
+    <p class="lead">{{ error_text }}</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('serve_index') }}" class="btn btn-cta">Voltar ao início</a>
+      <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver onde aceita</a>
+    </div>
+  </section>
+{% endblock %}

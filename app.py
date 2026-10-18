@@ -1,31 +1,93 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import logging
 import os
+from pathlib import Path
+import re
+import secrets
 import sqlite3
 import time
 from urllib.parse import urlparse
 from uuid import uuid4
 
 import dotenv
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, url_for
 from itsdangerous import BadSignature, URLSafeSerializer
-from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 
 
-dotenv.load_dotenv(".env")
+BASE_DIR = Path(__file__).resolve().parent
+dotenv.load_dotenv(BASE_DIR / ".env")
+
+logger = logging.getLogger("aceita-bitcoin")
+
+
+def resolve_path(value, default):
+    """Caminho relativo vale a partir da pasta do app, nao do diretorio corrente."""
+    path = Path(value or default).expanduser()
+    return path if path.is_absolute() else BASE_DIR / path
+
+
+def env_flag(name, default):
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on", "sim"}
+
+
+def load_secret_key():
+    """Le a chave do ambiente ou de um arquivo fora do git; cria o arquivo na primeira vez.
+
+    Ordem: FLASK_SECRET_KEY / SECRET_KEY no ambiente (ou no .env), depois o arquivo
+    SECRET_KEY_FILE (padrao instance/secret_key, ignorado pelo git). Se nada disso
+    existir, gera uma chave aleatoria e grava no arquivo com permissao 600, para que
+    os formularios abertos continuem valendo depois de um reinicio do servico.
+    """
+    from_env = os.getenv("FLASK_SECRET_KEY") or os.getenv("SECRET_KEY")
+    if from_env:
+        return from_env
+
+    key_path = resolve_path(os.getenv("SECRET_KEY_FILE"), "instance/secret_key")
+    try:
+        if key_path.exists():
+            stored = key_path.read_text(encoding="utf-8").strip()
+            if stored:
+                return stored
+        key_path.parent.mkdir(parents=True, exist_ok=True)
+        new_key = secrets.token_hex(32)
+        fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(new_key)
+        return new_key
+    except OSError:
+        logger.warning("Nao foi possivel ler nem gravar %s; usando chave temporaria.", key_path)
+        return secrets.token_hex(32)
+
 
 app = Flask(__name__)
-app.config["JSON_SORT_KEYS"] = False
+app.json.sort_keys = False
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
-app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY") or os.getenv("SECRET_KEY") or os.urandom(32).hex()
+app.config["SECRET_KEY"] = load_secret_key()
+app.config["DB_FILE_PATH"] = str(resolve_path(os.getenv("DB_FILE_PATH"), "database.db"))
+# Os logos sao servidos em /static/logos: so mude UPLOAD_FOLDER nos testes.
+app.config["UPLOAD_FOLDER"] = str(resolve_path(os.getenv("UPLOAD_FOLDER"), "static/logos"))
+app.config["CADASTRO_MODERADO"] = env_flag("CADASTRO_MODERADO", True)
+app.config["SITE_URL"] = (os.getenv("SITE_URL") or "https://aqui-aceita-bitcoin.br-ln.com").rstrip("/")
+
 TRUSTED_PROXY_HOPS = int(os.getenv("TRUSTED_PROXY_HOPS") or 1)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=TRUSTED_PROXY_HOPS, x_proto=1, x_host=1)
 
-DB_FILE_PATH = dotenv.get_key(".env", "DB_FILE_PATH") or "database.db"
-PORT = int(dotenv.get_key(".env", "PORT") or os.getenv("PORT") or 5000)
-UPLOAD_FOLDER = os.path.join(app.static_folder, "logos")
+PORT = int(os.getenv("PORT") or 5000)
 ALLOWED_LOGO_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+BRLN_SITE = "https://br-ln.com"
+BRLN_ORIGIN_PARAM = "origem=aceita"
+
+STATUS_PENDENTE = "pendente"
+STATUS_APROVADO = "aprovado"
+STATUS_REJEITADO = "rejeitado"
+STATUS_VALUES = {STATUS_PENDENTE, STATUS_APROVADO, STATUS_REJEITADO}
 
 TYPE_LABELS = {
     "restaurant": "Restaurante",
@@ -43,17 +105,20 @@ TYPE_LABELS = {
 }
 
 SUBMISSION_TYPE_OPTIONS = [
-    {"value": "restaurant", "label": TYPE_LABELS["restaurant"]},
-    {"value": "cafe", "label": TYPE_LABELS["cafe"]},
-    {"value": "bar", "label": TYPE_LABELS["bar"]},
-    {"value": "hotel", "label": TYPE_LABELS["hotel"]},
-    {"value": "shop", "label": TYPE_LABELS["shop"]},
-    {"value": "supermarket", "label": TYPE_LABELS["supermarket"]},
-    {"value": "bakery", "label": TYPE_LABELS["bakery"]},
-    {"value": "pharmacy", "label": TYPE_LABELS["pharmacy"]},
-    {"value": "healthcare", "label": TYPE_LABELS["healthcare"]},
-    {"value": "rental", "label": TYPE_LABELS["rental"]},
-    {"value": "other", "label": TYPE_LABELS["other"]},
+    {"value": value, "label": TYPE_LABELS[value]}
+    for value in (
+        "restaurant",
+        "cafe",
+        "bar",
+        "hotel",
+        "shop",
+        "supermarket",
+        "bakery",
+        "pharmacy",
+        "healthcare",
+        "rental",
+        "other",
+    )
 ]
 SUBMISSION_TYPE_VALUES = {item["value"] for item in SUBMISSION_TYPE_OPTIONS}
 ALLOWED_WEBSITE_SCHEMES = {"http", "https"}
@@ -63,12 +128,32 @@ SUBMISSION_BURST_LIMIT = 6
 SUBMISSION_BURST_WINDOW_SECONDS = 10 * 60
 SUBMISSION_DAILY_LIMIT = 30
 
+FIELD_LIMITS = {
+    "nome": 120,
+    "endereco": 240,
+    "email": 160,
+    "telefone": 40,
+    "website": 300,
+    "observacoes": 2000,
+}
+FIELD_LABELS = {
+    "nome": "Nome do estabelecimento",
+    "tipo": "Tipo",
+    "endereco": "Endereço",
+    "email": "E-mail",
+    "telefone": "Telefone",
+    "website": "Website",
+    "observacoes": "Observações",
+}
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+PHONE_PATTERN = re.compile(r"^[0-9+()\-.\s]{8,40}$")
+
 SITE_NAV = [
     {"endpoint": "serve_index", "label": "Início"},
-    {"endpoint": "serve_sobre", "label": "Projeto"},
     {"endpoint": "serve_carteiras", "label": "Carteiras"},
+    {"endpoint": "serve_estabelecimentos", "label": "Onde aceita"},
     {"endpoint": "serve_materiais", "label": "Materiais"},
-    {"endpoint": "serve_estabelecimentos", "label": "Mapa local"},
+    {"endpoint": "serve_sobre", "label": "Projeto"},
 ]
 
 SOCIAL_LINKS = [
@@ -77,9 +162,23 @@ SOCIAL_LINKS = [
     {"label": "Services", "url": "https://services.br-ln.com/", "icon": "fa-solid fa-arrow-up-right-from-square"},
 ]
 
+
+def brln_url(path=""):
+    """Link para br-ln.com com a marca de origem, para medir quem veio daqui."""
+    path = path.lstrip("/")
+    fragment = ""
+    if "#" in path:
+        path, fragment = path.split("#", 1)
+        fragment = f"#{fragment}"
+    separator = "&" if "?" in path else "?"
+    return f"{BRLN_SITE}/{path}{separator}{BRLN_ORIGIN_PARAM}{fragment}"
+
+
 FOOTER_LINKS = [
-    {"label": "BRLN Club", "url": "https://br-ln.com/"},
-    {"label": "Bitcoin Services", "url": "https://services.br-ln.com/"},
+    {"label": "BR⚡LN Club", "url": brln_url()},
+    {"label": "Guias do BR⚡LN", "url": brln_url("guias/")},
+    {"label": "Ferramentas grátis", "url": brln_url("ferramentas/")},
+    {"label": "Faucet: primeiros sats", "url": brln_url("faucet/")},
     {"label": "BTC Map", "url": "https://btcmap.org/"},
     {"label": "Status dos serviços", "url": "https://uptime.br-ln.com/status/brln"},
 ]
@@ -91,7 +190,7 @@ PILOT_ESTABLISHMENTS = [
         "type_label": "Café",
         "address": "Avenida dos Pioneiros, 1010, Carambeí, PR",
         "city_label": "Carambeí, PR",
-        "excerpt": "Caso piloto do projeto com ativação prática no balcão e onboarding do time para receber via Lightning.",
+        "excerpt": "Caso piloto do projeto, com ativação no balcão e a equipe treinada para receber via Lightning.",
         "accepts_lightning": True,
         "accepts_onchain": True,
         "accepts_contactless": False,
@@ -104,7 +203,7 @@ PILOT_ESTABLISHMENTS = [
         "type_label": "Serviços e locação",
         "address": "Carambeí, PR",
         "city_label": "Carambeí, PR",
-        "excerpt": "Empresa atendida pelo projeto para mostrar que Bitcoin também encaixa em serviços fora do varejo tradicional.",
+        "excerpt": "Empresa atendida pelo projeto, mostrando que bitcoin também serve para serviços, não só para o varejo.",
         "accepts_lightning": True,
         "accepts_onchain": True,
         "accepts_contactless": False,
@@ -112,12 +211,12 @@ PILOT_ESTABLISHMENTS = [
         "website": "",
     },
     {
-        "name": "BRLN Club",
+        "name": "BR⚡LN Club",
         "type": "education",
         "type_label": "Comunidade e suporte",
         "address": "Operação distribuída com base no Brasil",
         "city_label": "Brasil",
-        "excerpt": "Hub de suporte, materiais e comunidade que dá tração à frente comercial do Aceita Bitcoin?.",
+        "excerpt": "Comunidade brasileira de Bitcoin e Lightning que dá suporte, materiais e guias ao Aceita Bitcoin?.",
         "accepts_lightning": True,
         "accepts_onchain": True,
         "accepts_contactless": False,
@@ -126,41 +225,66 @@ PILOT_ESTABLISHMENTS = [
     },
 ]
 
+# Os pilotos que sao estabelecimentos entram no diretorio publico junto com o banco.
+DIRECTORY_PILOTS = [
+    dict(item, pilot=True, source="pilot") for item in PILOT_ESTABLISHMENTS if item["type"] != "education"
+]
+
 WALLETS = [
     {
         "name": "Blink",
         "url": "https://www.blink.sv/",
-        "badge": "Onboarding rápido",
-        "summary": "Carteira focada em simplicidade para pagamentos Lightning no balcão.",
-        "fit": "Boa opção para começar rápido e treinar a equipe.",
+        "custody": "Custódia de terceiros",
+        "custody_kind": "custodial",
+        "badge": "Começo rápido",
+        "summary": "Carteira Lightning simples, com endereço Lightning e modo de ponto de venda para cobrar no balcão.",
+        "fit": "Para começar rápido e treinar a equipe sem se preocupar com canais.",
         "highlights": [
-            "Fluxo simples para receber e pagar",
-            "Experiência pensada para uso diário",
-            "Disponibilidade pode variar por região",
+            "A empresa guarda os fundos: prático, mas exige confiar nela",
+            "Tem endereço Lightning próprio para receber",
+            "Confira se o app atende o Brasil antes de indicar",
+        ],
+    },
+    {
+        "name": "Coinos",
+        "url": "https://coinos.io/",
+        "custody": "Custódia de terceiros",
+        "custody_kind": "custodial",
+        "badge": "Funciona no navegador",
+        "summary": "Carteira que roda no navegador, sem instalar nada, com tela de cobrança e endereço Lightning.",
+        "fit": "Para um tablet ou computador no caixa, ou para quem não quer instalar app.",
+        "highlights": [
+            "A empresa guarda os fundos: deixe só o capital de giro",
+            "Tela de ponto de venda que gera a cobrança em reais",
+            "Endereço Lightning no formato nome@coinos.io",
         ],
     },
     {
         "name": "Phoenix",
         "url": "https://phoenix.acinq.co/",
+        "custody": "Autocustódia",
+        "custody_kind": "self",
         "badge": "Mais soberania",
-        "summary": "Carteira com foco em autocustódia e experiência moderna para Lightning.",
-        "fit": "Indicado para quem quer mais controle sobre a própria custódia.",
+        "summary": "Carteira Lightning em que só você tem as chaves, com a parte técnica dos canais automatizada.",
+        "fit": "Para quem quer o controle dos próprios bitcoins e topa cuidar do backup.",
         "highlights": [
-            "Custódia própria",
-            "Boa experiência para usuários mais atentos à segurança",
-            "Exige entender melhor taxas e canais",
+            "Só você tem as chaves: guarde bem as 12 palavras",
+            "Cobra uma taxa quando precisa ampliar o canal para receber; veja a tabela no site",
+            "Bom passo seguinte depois de testar com uma carteira simples",
         ],
     },
     {
         "name": "Strike",
         "url": "https://strike.me/",
+        "custody": "Custódia de terceiros",
+        "custody_kind": "custodial",
         "badge": "Ecossistema amplo",
-        "summary": "Plataforma Bitcoin com pagamentos Lightning e recursos adicionais.",
-        "fit": "Útil para quem quer uma operação mais ampla além do caixa.",
+        "summary": "Plataforma de bitcoin com pagamentos Lightning e outros serviços além da carteira.",
+        "fit": "Para quem quer uma conta mais completa, se estiver disponível na sua região.",
         "highlights": [
-            "Lightning com experiência polida",
-            "Recursos do app variam conforme o país",
-            "Boa referência para operação comercial",
+            "A empresa guarda os fundos e pede cadastro com documento",
+            "Recursos e disponibilidade mudam conforme o país",
+            "Confira se atende o Brasil antes de indicar",
         ],
     },
 ]
@@ -172,7 +296,7 @@ MATERIAL_DOWNLOADS = [
         "size": "30 x 7,75 cm",
         "file": "downloads/materiais_adesivo_AceitaBTC.png",
         "preview": "img/logo.png",
-        "description": "Peça principal para comunicar aceitação de Bitcoin na entrada do local.",
+        "description": "Peça principal para comunicar, na entrada, que o local aceita bitcoin.",
     },
     {
         "title": "Adesivo de entrada",
@@ -197,13 +321,13 @@ RESOURCE_LIBRARY = [
         "title": "Apostila: Bitcoin para comerciantes",
         "format": "PDF",
         "file": "downloads/material_apostila_bitcoin_para_comerciantes.pdf",
-        "description": "Guia prático para apresentar Bitcoin como meio de pagamento no comércio local.",
+        "description": "Guia prático para apresentar bitcoin como meio de pagamento no comércio local.",
     },
     {
         "title": "Manual: Lightning Network",
         "format": "PDF",
         "file": "downloads/material_manual_lightning_network.pdf",
-        "description": "Material de apoio para explicar como funcionam recebimentos instantâneos com Lightning.",
+        "description": "Material de apoio para explicar como funcionam os recebimentos instantâneos com Lightning.",
     },
 ]
 
@@ -213,33 +337,33 @@ WHATSAPP_MESSAGES = [
         "title": "Abordagem inicial",
         "content": """Olá! Tudo bem?
 
-Estou organizando uma iniciativa local para ajudar estabelecimentos a aceitarem Bitcoin de forma simples, principalmente via Lightning.
+Estou organizando uma iniciativa local para ajudar estabelecimentos a aceitarem bitcoin de forma simples, principalmente pela Lightning.
 
 A ideia é oferecer apoio no cadastro, orientação de carteira e material visual para comunicar que o local já recebe esse tipo de pagamento.
 
-Se fizer sentido para você, posso explicar em poucos minutos como funciona na prática e quais são os benefícios para o seu negócio.""",
+Se fizer sentido para você, posso explicar em poucos minutos como funciona na prática.""",
     },
     {
         "id": "whatsapp-benefits",
         "title": "Mensagem de benefícios",
-        "content": """Aceitar Bitcoin pode trazer alguns ganhos imediatos:
+        "content": """Aceitar bitcoin pode trazer alguns ganhos práticos:
 
-- novas visitas de clientes da comunidade
-- pagamentos instantâneos com Lightning
-- posicionamento de inovação para o negócio
-- presença em mapas e materiais da iniciativa local
+- clientes da comunidade que procuram lugares que aceitam
+- pagamento que chega em segundos pela Lightning, sem estorno
+- sem maquininha nem mensalidade: basta um celular
+- presença no mapa e nos materiais da iniciativa local
 
-Se quiser, eu posso ajudar no primeiro setup e na demonstração de uma venda real.""",
+Se quiser, eu ajudo no primeiro setup e numa venda de teste.""",
     },
     {
         "id": "whatsapp-visit",
         "title": "Convite para visita",
-        "content": """Posso passar no estabelecimento para fazer uma ativação rápida:
+        "content": """Posso passar no estabelecimento para uma ativação rápida:
 
 1. configurar uma carteira
 2. revisar como cobrar no caixa
-3. entregar material visual
-4. simular ou realizar a primeira compra em Bitcoin
+3. entregar o material visual
+4. fazer uma compra de teste com bitcoin
 
 Se topar, me diga um horário bom e eu organizo contigo.""",
     },
@@ -249,22 +373,22 @@ TIMELINE = [
     {
         "period": "Janeiro de 2025",
         "title": "Estrutura inicial do projeto",
-        "text": "A iniciativa começou como uma frente do ecossistema BRLN para apoiar adoção comercial de Bitcoin com foco em execução prática.",
+        "text": "A iniciativa começou como uma frente do BR⚡LN para apoiar a adoção de bitcoin no comércio, com foco na prática.",
     },
     {
         "period": "Abril de 2025",
         "title": "Primeiros pilotos em Carambeí",
-        "text": "O projeto validou o fluxo de onboarding, material visual e ativação presencial em estabelecimentos locais.",
+        "text": "O projeto validou a abordagem, o material visual e a ativação presencial em estabelecimentos locais.",
     },
     {
         "period": "Maio de 2025",
         "title": "Primeira versão pública do site",
-        "text": "Foi ao ar a primeira versão com cadastro básico, páginas informativas e materiais de apoio.",
+        "text": "Foi ao ar a primeira versão, com cadastro básico, páginas informativas e materiais de apoio.",
     },
     {
         "period": "Março de 2026",
         "title": "Nova fase digital do projeto",
-        "text": "O site entrou em uma nova fase com estrutura mais sólida, navegação mais clara e base preparada para crescer.",
+        "text": "O site ganhou navegação mais clara e uma base preparada para crescer.",
     },
 ]
 
@@ -286,11 +410,51 @@ TEAM = [
     },
 ]
 
+CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+        "img-src 'self' data:",
+        "frame-src https://btcmap.org",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'self'",
+    ]
+)
+
+
+def db_path():
+    return app.config["DB_FILE_PATH"]
+
+
+def connect_db():
+    conn = sqlite3.connect(db_path(), timeout=10)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def migrate_db(conn):
+    """Migracoes aditivas e idempotentes: so acrescentam colunas e indices."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(estabelecimentos)")}
+    if "status" not in columns:
+        # Quem ja estava no banco continua publico, como antes da moderacao existir.
+        conn.execute(
+            f"ALTER TABLE estabelecimentos ADD COLUMN status TEXT NOT NULL DEFAULT '{STATUS_APROVADO}'"
+        )
+    if "criado_em" not in columns:
+        conn.execute("ALTER TABLE estabelecimentos ADD COLUMN criado_em INTEGER")
+    if "revisado_em" not in columns:
+        conn.execute("ALTER TABLE estabelecimentos ADD COLUMN revisado_em INTEGER")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_estabelecimentos_status ON estabelecimentos (status)")
+
 
 def init_db():
-    with sqlite3.connect(DB_FILE_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
+    with sqlite3.connect(db_path()) as conn:
+        conn.execute(
             """
             CREATE TABLE IF NOT EXISTS estabelecimentos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -309,13 +473,13 @@ def init_db():
             )
             """
         )
-        cursor.execute(
+        conn.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_estabelecimentos_lookup
             ON estabelecimentos (tipo, nome, endereco)
             """
         )
-        cursor.execute(
+        conn.execute(
             """
             CREATE TABLE IF NOT EXISTS submission_attempts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -326,12 +490,13 @@ def init_db():
             )
             """
         )
-        cursor.execute(
+        conn.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_submission_attempts_ip_created
             ON submission_attempts (ip_address, created_at)
             """
         )
+        migrate_db(conn)
         conn.commit()
 
 
@@ -353,22 +518,46 @@ def parse_checkbox_value(form_data, field_name):
     return str(form_data.get(field_name, "")).strip().lower() in {"1", "true", "on", "yes"}
 
 
+def check_length(field_name, value):
+    limit = FIELD_LIMITS.get(field_name)
+    if limit and len(value) > limit:
+        raise ValueError(f"{FIELD_LABELS[field_name]}: use no máximo {limit} caracteres.")
+    return value
+
+
 def validate_submission_type(raw_type):
     normalized_type = normalize_text(raw_type).lower()
     if normalized_type not in SUBMISSION_TYPE_VALUES:
-        raise ValueError("Tipo de estabelecimento invalido.")
+        raise ValueError("Tipo de estabelecimento inválido.")
     return normalized_type
 
 
+def is_safe_website(website):
+    parsed = urlparse(website or "")
+    return parsed.scheme.lower() in ALLOWED_WEBSITE_SCHEMES and bool(parsed.netloc)
+
+
 def validate_website(raw_website):
-    website = normalize_optional_text(raw_website)
+    website = check_length("website", normalize_optional_text(raw_website))
     if not website:
         return ""
-
-    parsed = urlparse(website)
-    if parsed.scheme.lower() not in ALLOWED_WEBSITE_SCHEMES or not parsed.netloc:
-        raise ValueError("Website invalido. Use uma URL completa com http:// ou https://.")
+    if not is_safe_website(website):
+        raise ValueError("Website inválido. Use o endereço completo, começando com http:// ou https://.")
     return website
+
+
+def validate_email(raw_email):
+    email = check_length("email", normalize_optional_text(raw_email))
+    if email and not EMAIL_PATTERN.match(email):
+        raise ValueError("E-mail inválido.")
+    return email
+
+
+def validate_phone(raw_phone):
+    phone = check_length("telefone", normalize_text(raw_phone))
+    if phone and not PHONE_PATTERN.match(phone):
+        raise ValueError("Telefone inválido. Use só números, espaços e os sinais + ( ) -.")
+    return phone
 
 
 def validate_check_date(raw_check_date):
@@ -379,10 +568,11 @@ def validate_check_date(raw_check_date):
     try:
         parsed_date = datetime.strptime(check_date, "%Y-%m-%d").date()
     except ValueError as exc:
-        raise ValueError("Data de verificacao invalida.") from exc
+        raise ValueError("Data de verificação inválida.") from exc
 
-    if parsed_date > datetime.now().date():
-        raise ValueError("Data de verificacao nao pode estar no futuro.")
+    # Um dia de folga: o navegador do visitante pode estar num fuso a frente do servidor.
+    if parsed_date > (datetime.now() + timedelta(days=1)).date():
+        raise ValueError("A data de verificação não pode estar no futuro.")
     return parsed_date.isoformat()
 
 
@@ -403,60 +593,55 @@ def detect_logo_format(file_storage):
 
 def validate_logo_upload(file_storage, filename):
     if not allowed_logo(filename):
-        raise ValueError("Formato de logo nao suportado.")
+        raise ValueError("Formato de logo não suportado. Use PNG, JPG, GIF ou WEBP.")
 
     detected_format = detect_logo_format(file_storage)
     if not detected_format:
-        raise ValueError("Arquivo de logo invalido.")
+        raise ValueError("O arquivo da logo não é uma imagem válida.")
 
     file_extension = filename.rsplit(".", 1)[1].lower()
     valid_extensions = {"jpg", "jpeg"} if detected_format == "jpg" else {detected_format}
     if file_extension not in valid_extensions:
-        raise ValueError("Extensao da logo nao corresponde ao arquivo enviado.")
+        raise ValueError("A extensão da logo não corresponde ao arquivo enviado.")
 
-    return "jpg" if detected_format == "jpg" else detected_format
+    return detected_format
 
 
 def extract_city_label(address):
-    parts = [part.strip() for part in address.split(",") if part.strip()]
+    parts = [part.strip() for part in (address or "").split(",") if part.strip()]
     if len(parts) >= 2:
         return ", ".join(parts[-2:])
-    return address
+    return address or ""
 
 
 def build_establishment_base(row):
-    logo_filename = row.get("logo_filename") if isinstance(row, dict) else row["logo_filename"]
+    logo_filename = row.get("logo_filename")
     logo_url = (
         url_for("static", filename=f"logos/{logo_filename}")
         if logo_filename
         else url_for("static", filename="img/logo_aceita_bitcoin_pino1_wht.png")
     )
-    raw_type = row.get("tipo") if isinstance(row, dict) else row["tipo"]
-    address = row.get("endereco") if isinstance(row, dict) else row["endereco"]
+    raw_type = row.get("tipo")
+    address = row.get("endereco") or ""
     return {
-        "id": row.get("id") if isinstance(row, dict) else row["id"],
-        "name": row.get("nome") if isinstance(row, dict) else row["nome"],
+        "id": row.get("id"),
+        "name": row.get("nome"),
         "type": raw_type,
         "type_label": TYPE_LABELS.get(raw_type, "Outro"),
         "address": address,
         "city_label": extract_city_label(address),
-        "accepts_lightning": bool(row.get("aceita_lightning") if isinstance(row, dict) else row["aceita_lightning"]),
-        "accepts_onchain": bool(row.get("aceita_onchain") if isinstance(row, dict) else row["aceita_onchain"]),
-        "accepts_contactless": bool(
-            row.get("aceita_contactless") if isinstance(row, dict) else row["aceita_contactless"]
-        ),
+        "accepts_lightning": bool(row.get("aceita_lightning")),
+        "accepts_onchain": bool(row.get("aceita_onchain")),
+        "accepts_contactless": bool(row.get("aceita_contactless")),
         "logo_url": logo_url,
     }
 
 
 def serialize_public_establishment(row):
     establishment = build_establishment_base(row)
-    establishment.update(
-        {
-            "website": row.get("website") if isinstance(row, dict) else row["website"],
-            "source": "database",
-        }
-    )
+    website = row.get("website") or ""
+    # Cadastros antigos entraram sem validacao: so http(s) vira link.
+    establishment.update({"website": website if is_safe_website(website) else "", "source": "database"})
     return establishment
 
 
@@ -464,19 +649,25 @@ def serialize_internal_establishment(row):
     establishment = serialize_public_establishment(row)
     establishment.update(
         {
-            "email": row.get("email") if isinstance(row, dict) else row["email"],
-            "phone": row.get("telefone") if isinstance(row, dict) else row["telefone"],
-            "notes": row.get("observacoes") if isinstance(row, dict) else row["observacoes"],
-            "check_date": row.get("data_verificacao") if isinstance(row, dict) else row["data_verificacao"],
+            "email": row.get("email"),
+            "phone": row.get("telefone"),
+            "notes": row.get("observacoes"),
+            "check_date": row.get("data_verificacao"),
+            "status": row.get("status"),
         }
     )
     return establishment
 
 
-def fetch_establishments(include_private=False):
-    with sqlite3.connect(DB_FILE_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        rows = conn.execute("SELECT * FROM estabelecimentos ORDER BY id DESC").fetchall()
+def fetch_establishments(include_private=False, status=STATUS_APROVADO):
+    query = "SELECT * FROM estabelecimentos"
+    params = ()
+    if status:
+        query += " WHERE status = ?"
+        params = (status,)
+    query += " ORDER BY id DESC"
+    with connect_db() as conn:
+        rows = conn.execute(query, params).fetchall()
 
     serializer = serialize_internal_establishment if include_private else serialize_public_establishment
     return [serializer(dict(row)) for row in rows]
@@ -487,28 +678,21 @@ def establishment_exists(conn, nome, tipo, endereco):
         """
         SELECT id
         FROM estabelecimentos
-        WHERE lower(trim(nome)) = ?
-          AND lower(trim(tipo)) = ?
-          AND lower(trim(endereco)) = ?
+        WHERE lower(trim(nome)) = lower(?)
+          AND lower(trim(tipo)) = lower(?)
+          AND lower(trim(endereco)) = lower(?)
+          AND status != ?
         LIMIT 1
         """,
-        (nome.casefold(), tipo.casefold(), endereco.casefold()),
+        (nome.strip(), tipo.strip(), endereco.strip(), STATUS_REJEITADO),
     ).fetchone()
     return row is not None
-
-
-@app.errorhandler(413)
-def handle_payload_too_large(_error):
-    message = "Arquivo excede o limite de 5 MB."
-    if request.path.startswith("/api/"):
-        return jsonify({"success": False, "message": message}), 413
-    return message, 413
 
 
 def save_logo_upload(file_storage, safe_name):
     extension = validate_logo_upload(file_storage, safe_name)
     logo_filename = f"{uuid4().hex}.{extension}"
-    logo_path = os.path.join(UPLOAD_FOLDER, logo_filename)
+    logo_path = os.path.join(app.config["UPLOAD_FOLDER"], logo_filename)
     file_storage.save(logo_path)
     return logo_filename, logo_path
 
@@ -521,28 +705,29 @@ def generate_submission_token():
     payload = {
         "form": "cadastro",
         "issued_at": int(time.time()),
+        "nonce": secrets.token_hex(8),
     }
     return get_submission_serializer().dumps(payload)
 
 
 def validate_submission_token(token):
     if not token:
-        raise ValueError("Nao foi possivel validar o envio.")
+        raise ValueError("Não foi possível validar o envio. Recarregue a página e tente de novo.")
 
     try:
         payload = get_submission_serializer().loads(token)
     except BadSignature as exc:
-        raise ValueError("Nao foi possivel validar o envio.") from exc
+        raise ValueError("Não foi possível validar o envio. Recarregue a página e tente de novo.") from exc
 
-    if payload.get("form") != "cadastro":
-        raise ValueError("Nao foi possivel validar o envio.")
+    if not isinstance(payload, dict) or payload.get("form") != "cadastro":
+        raise ValueError("Não foi possível validar o envio. Recarregue a página e tente de novo.")
 
     issued_at = int(payload.get("issued_at", 0))
     age_seconds = int(time.time()) - issued_at
     if age_seconds < SUBMISSION_TOKEN_MIN_AGE_SECONDS:
         raise ValueError("Espere alguns segundos antes de enviar o cadastro.")
     if age_seconds > SUBMISSION_TOKEN_MAX_AGE_SECONDS:
-        raise ValueError("O formulario expirou. Recarregue a pagina e tente novamente.")
+        raise ValueError("O formulário expirou. Recarregue a página e tente novamente.")
 
 
 def get_client_ip():
@@ -560,7 +745,7 @@ def record_submission_attempt(conn, ip_address, created_at, blocked, reason):
 
 
 def log_submission_attempt(ip_address, blocked, reason):
-    with sqlite3.connect(DB_FILE_PATH) as conn:
+    with sqlite3.connect(db_path(), timeout=10) as conn:
         record_submission_attempt(conn, ip_address, int(time.time()), blocked, reason)
         conn.commit()
 
@@ -595,45 +780,113 @@ def submission_limit_message(conn, ip_address, current_ts):
         (ip_address, current_ts - (24 * 60 * 60)),
     ).fetchone()[0]
     if daily_count >= SUBMISSION_DAILY_LIMIT:
-        return "Limite diario de envios atingido para este IP. Tente novamente mais tarde."
+        return "Limite diário de envios atingido. Tente novamente amanhã."
 
     return None
 
 
+def directory_entries(establishments):
+    return establishments + DIRECTORY_PILOTS
+
+
 def build_home_stats(establishments):
-    mapped_cities = {entry["city_label"] for entry in establishments if entry["city_label"]}
+    entries = directory_entries(establishments)
+    mapped_cities = {entry["city_label"] for entry in entries if entry["city_label"]}
     return [
-        {"value": len(establishments), "label": "cadastros públicos"},
+        {"value": len(entries), "label": "locais no diretório"},
+        {"value": len(mapped_cities), "label": "cidades com locais"},
         {"value": len(PILOT_ESTABLISHMENTS), "label": "casos piloto"},
-        {"value": max(len(mapped_cities), 3), "label": "frentes mapeadas"},
     ]
+
+
+def canonical_url():
+    return app.config["SITE_URL"] + request.path
+
+
+def page_section(endpoint):
+    """Marca o item do menu como ativo, inclusive nas paginas filhas da trilha Aprenda."""
+    return request.endpoint == endpoint
+
+
+@app.after_request
+def apply_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+    response.headers.setdefault("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+    return response
 
 
 @app.context_processor
 def inject_site_context():
-    social_image = url_for("static", filename="img/logo_aceita_bitcoin_pino1_wht.png", _external=True)
+    social_image = app.config["SITE_URL"] + url_for("static", filename="img/logo_aceita_bitcoin_pino1_wht.png")
     return {
         "site_nav": SITE_NAV,
         "site_social_links": SOCIAL_LINKS,
         "site_footer_links": FOOTER_LINKS,
         "submission_types": SUBMISSION_TYPE_OPTIONS,
         "current_year": datetime.now().year,
-        "site_name": "Aceita Bitcoin? / BRLN",
-        "site_url": request.url_root.rstrip("/"),
+        "site_name": "Aceita Bitcoin? / BR⚡LN",
+        "site_url": app.config["SITE_URL"],
+        "canonical_url": canonical_url(),
         "social_image_url": social_image,
+        "brln_url": brln_url,
+        "page_section": page_section,
     }
+
+
+@app.errorhandler(404)
+def handle_not_found(_error):
+    if request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Não encontrado."}), 404
+    return (
+        render_template(
+            "erro.html",
+            page="erro",
+            page_title="Página não encontrada | Aceita Bitcoin?",
+            page_description="A página procurada não existe ou mudou de endereço.",
+            error_title="Página não encontrada",
+            error_text="O endereço pode ter mudado. Volte ao início e siga pelo menu.",
+        ),
+        404,
+    )
+
+
+@app.errorhandler(413)
+def handle_payload_too_large(_error):
+    message = "O arquivo passou do limite de 5 MB."
+    if request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": message}), 413
+    return message, 413
+
+
+@app.errorhandler(500)
+def handle_server_error(_error):
+    if request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Erro interno. Tente de novo em instantes."}), 500
+    return (
+        render_template(
+            "erro.html",
+            page="erro",
+            page_title="Erro | Aceita Bitcoin?",
+            page_description="Algo deu errado do nosso lado.",
+            error_title="Algo deu errado do nosso lado",
+            error_text="Tente de novo em instantes. Se continuar, avise a equipe pelo e-mail do rodapé.",
+        ),
+        500,
+    )
 
 
 @app.route("/")
 def serve_index():
     establishments = fetch_establishments()
-    featured = establishments[:3] if establishments else PILOT_ESTABLISHMENTS
     return render_template(
         "index.html",
         page="home",
-        page_title="Aceita Bitcoin? | BRLN",
+        page_title="Aceita Bitcoin? | BR⚡LN",
         page_description="Projeto para ajudar estabelecimentos e comunidades locais a ativarem pagamentos com Bitcoin e Lightning.",
-        featured_establishments=featured,
+        featured_establishments=PILOT_ESTABLISHMENTS,
         project_stats=build_home_stats(establishments),
         public_count=len(establishments),
     )
@@ -642,17 +895,19 @@ def serve_index():
 @app.route("/cadastro")
 def serve_cadastro():
     prefill = {
-        "nome": request.args.get("nome", ""),
+        "nome": request.args.get("nome", "")[: FIELD_LIMITS["nome"]],
         "tipo": request.args.get("tipo", ""),
-        "endereco": request.args.get("endereco", ""),
-        "email": request.args.get("email", ""),
+        "endereco": request.args.get("endereco", "")[: FIELD_LIMITS["endereco"]],
+        "email": request.args.get("email", "")[: FIELD_LIMITS["email"]],
     }
     return render_template(
         "cadastro.html",
         page="cadastro",
-        page_title="Cadastrar estabelecimento",
-        page_description="Cadastre um estabelecimento e organize a ativação local de pagamentos com Bitcoin.",
+        page_title="Cadastrar estabelecimento | Aceita Bitcoin?",
+        page_description="Cadastre um estabelecimento que aceita bitcoin para ele aparecer no diretório do Aceita Bitcoin?.",
         prefill=prefill,
+        field_limits=FIELD_LIMITS,
+        moderated=app.config["CADASTRO_MODERADO"],
         default_check_date=datetime.now().strftime("%Y-%m-%d"),
         submission_token=generate_submission_token(),
     )
@@ -663,8 +918,8 @@ def serve_materiais():
     return render_template(
         "materiais.html",
         page="materiais",
-        page_title="Materiais de divulgação",
-        page_description="Downloads, mensagens prontas e recursos para abordar, ativar e divulgar estabelecimentos que aceitam Bitcoin.",
+        page_title="Materiais de divulgação | Aceita Bitcoin?",
+        page_description="Adesivos, folder, apostila e mensagens prontas para abordar e ativar estabelecimentos que aceitam bitcoin.",
         material_downloads=MATERIAL_DOWNLOADS,
         resource_library=RESOURCE_LIBRARY,
         whatsapp_messages=WHATSAPP_MESSAGES,
@@ -675,15 +930,15 @@ def serve_materiais():
 def serve_sobre():
     establishments = fetch_establishments()
     about_stats = [
-        {"value": len(PILOT_ESTABLISHMENTS), "label": "casos piloto ativos"},
-        {"value": len(establishments), "label": "cadastros públicos"},
-        {"value": len(MATERIAL_DOWNLOADS) + len(RESOURCE_LIBRARY), "label": "materiais publicados"},
+        {"value": len(PILOT_ESTABLISHMENTS), "label": "casos piloto"},
+        {"value": len(establishments), "label": "cadastros publicados"},
+        {"value": len(MATERIAL_DOWNLOADS) + len(RESOURCE_LIBRARY), "label": "materiais para baixar"},
     ]
     return render_template(
         "sobre.html",
         page="sobre",
-        page_title="Sobre o projeto",
-        page_description="Conheça a proposta do Aceita Bitcoin? e como o projeto ajuda a ativar comércio local com Bitcoin.",
+        page_title="Sobre o projeto | Aceita Bitcoin?",
+        page_description="Conheça o Aceita Bitcoin?, frente do BR⚡LN que ajuda o comércio local a aceitar bitcoin.",
         about_stats=about_stats,
         timeline=TIMELINE,
         team=TEAM,
@@ -696,8 +951,10 @@ def serve_carteiras():
     return render_template(
         "carteiras.html",
         page="carteiras",
-        page_title="Carteiras recomendadas",
-        page_description="Carteiras recomendadas para começar a receber pagamentos em Bitcoin com mais segurança e clareza.",
+        page_title="Carteiras para receber bitcoin | Aceita Bitcoin?",
+        page_description=(
+            "Custódia de terceiros ou autocustódia: como escolher a carteira para receber bitcoin e Lightning no comércio."
+        ),
         wallets=WALLETS,
     )
 
@@ -708,100 +965,80 @@ def serve_estabelecimentos():
     return render_template(
         "estabelecimentos.html",
         page="estabelecimentos",
-        page_title="Estabelecimentos cadastrados",
-        page_description="Diretório público de estabelecimentos cadastrados no projeto Aceita Bitcoin?.",
-        establishments=establishments,
+        page_title="Onde aceita bitcoin | Aceita Bitcoin?",
+        page_description="Diretório de estabelecimentos que aceitam bitcoin cadastrados no projeto Aceita Bitcoin?.",
+        establishments=directory_entries(establishments),
     )
 
 
-@app.route("/index.html")
-def legacy_index():
-    return redirect(url_for("serve_index", **request.args), code=301)
+@app.route("/robots.txt")
+def serve_robots():
+    body = f"User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {app.config['SITE_URL']}/sitemap.xml\n"
+    return Response(body, mimetype="text/plain")
 
 
-@app.route("/cadastro.html")
-def legacy_cadastro():
-    return redirect(url_for("serve_cadastro", **request.args), code=301)
+@app.route("/sitemap.xml")
+def serve_sitemap():
+    paths = [url_for("serve_index"), url_for("serve_carteiras")]
+    paths += [url_for("serve_estabelecimentos"), url_for("serve_materiais"), url_for("serve_sobre"), url_for("serve_cadastro")]
+    entries = "".join(f"<url><loc>{app.config['SITE_URL']}{path}</loc></url>" for path in paths)
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{entries}</urlset>'
+    )
+    return Response(body, mimetype="application/xml")
 
 
-@app.route("/materiais.html")
-def legacy_materiais():
-    return redirect(url_for("serve_materiais", **request.args), code=301)
+def legacy_redirect(endpoint):
+    return redirect(url_for(endpoint, **request.args), code=301)
 
 
-@app.route("/sobre.html")
-def legacy_sobre():
-    return redirect(url_for("serve_sobre", **request.args), code=301)
+for _legacy_path, _endpoint in {
+    "/index.html": "serve_index",
+    "/cadastro.html": "serve_cadastro",
+    "/materiais.html": "serve_materiais",
+    "/sobre.html": "serve_sobre",
+    "/carteiras.html": "serve_carteiras",
+    "/estabelecimentos.html": "serve_estabelecimentos",
+}.items():
+    app.add_url_rule(
+        _legacy_path,
+        endpoint=f"legacy_{_endpoint}",
+        view_func=lambda _endpoint=_endpoint: legacy_redirect(_endpoint),
+    )
 
 
-@app.route("/carteiras.html")
-def legacy_carteiras():
-    return redirect(url_for("serve_carteiras", **request.args), code=301)
+def read_submission(data):
+    """Valida e normaliza os campos do cadastro. Levanta ValueError com mensagem para o usuario."""
+    fields = {
+        "nome": check_length("nome", normalize_text(data.get("nome"))),
+        "tipo": normalize_text(data.get("tipo")).lower(),
+        "endereco": check_length("endereco", normalize_text(data.get("endereco"))),
+    }
+    missing = [FIELD_LABELS[name] for name, value in fields.items() if not value]
+    if missing:
+        raise ValueError(f"Preencha os campos obrigatórios: {', '.join(missing)}.")
 
-
-@app.route("/estabelecimentos.html")
-def legacy_estabelecimentos():
-    return redirect(url_for("serve_estabelecimentos", **request.args), code=301)
+    fields["tipo"] = validate_submission_type(fields["tipo"])
+    fields["email"] = validate_email(data.get("email"))
+    fields["telefone"] = validate_phone(data.get("telefone"))
+    fields["website"] = validate_website(data.get("website"))
+    fields["observacoes"] = check_length("observacoes", normalize_optional_text(data.get("observacoes")))
+    fields["data_verificacao"] = validate_check_date(data.get("data_verificacao"))
+    fields["aceita_lightning"] = parse_checkbox_value(data, "aceita_lightning")
+    fields["aceita_onchain"] = parse_checkbox_value(data, "aceita_onchain")
+    fields["aceita_contactless"] = parse_checkbox_value(data, "aceita_contactless")
+    return fields
 
 
 @app.route("/api/estabelecimentos", methods=["POST"])
 def cadastrar_estabelecimento():
     data = request.form
     arquivo = request.files.get("logo")
-
-    required_fields = {
-        "nome": normalize_text(data.get("nome")),
-        "tipo": normalize_text(data.get("tipo")).lower(),
-        "endereco": normalize_text(data.get("endereco")),
-    }
-    missing = [field for field, value in required_fields.items() if not value]
-    if missing:
-        return jsonify({"success": False, "message": f"Campos obrigatórios ausentes: {', '.join(missing)}."}), 400
-
-    logo_filename = None
-    if arquivo and arquivo.filename:
-        safe_name = secure_filename(arquivo.filename)
-        if not allowed_logo(safe_name):
-            return jsonify({"success": False, "message": "Formato de logo não suportado."}), 400
-        logo_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe_name}"
-        arquivo.save(os.path.join(UPLOAD_FOLDER, logo_filename))
-
-    with sqlite3.connect(DB_FILE_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO estabelecimentos (
-                nome, tipo, endereco, email, telefone, website, observacoes,
-                aceita_lightning, aceita_onchain, aceita_contactless, data_verificacao, logo_filename
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                required_fields["nome"],
-                required_fields["tipo"],
-                required_fields["endereco"],
-                data.get("email", "").strip(),
-                data.get("telefone", "").strip(),
-                data.get("website", "").strip(),
-                data.get("observacoes", "").strip(),
-                data.get("aceita_lightning") == "true",
-                data.get("aceita_onchain") == "true",
-                data.get("aceita_contactless") == "true",
-                data.get("data_verificacao", "").strip(),
-                logo_filename,
-            ),
-        )
-        conn.commit()
-
-    return jsonify({"success": True, "message": "Estabelecimento cadastrado com sucesso."})
-
-
-def cadastrar_estabelecimento_v2():
-    data = request.form
-    arquivo = request.files.get("logo")
     client_ip = get_client_ip()
     current_ts = int(time.time())
 
-    with sqlite3.connect(DB_FILE_PATH) as conn:
+    with sqlite3.connect(db_path(), timeout=10) as conn:
         conn.execute("BEGIN IMMEDIATE")
         prune_submission_attempts(conn, current_ts)
         limit_message = submission_limit_message(conn, client_ip, current_ts)
@@ -813,7 +1050,7 @@ def cadastrar_estabelecimento_v2():
 
     if normalize_optional_text(data.get("website_confirmation")):
         log_submission_attempt(client_ip, True, "honeypot")
-        return jsonify({"success": False, "message": "Nao foi possivel validar o envio."}), 400
+        return jsonify({"success": False, "message": "Não foi possível validar o envio."}), 400
 
     try:
         validate_submission_token(normalize_optional_text(data.get("submission_token")))
@@ -821,31 +1058,20 @@ def cadastrar_estabelecimento_v2():
         log_submission_attempt(client_ip, True, "token")
         return jsonify({"success": False, "message": str(exc)}), 400
 
-    required_fields = {
-        "nome": normalize_text(data.get("nome")),
-        "tipo": normalize_text(data.get("tipo")).lower(),
-        "endereco": normalize_text(data.get("endereco")),
-    }
-    missing = [field for field, value in required_fields.items() if not value]
-    if missing:
-        log_submission_attempt(client_ip, True, "missing_fields")
-        return jsonify({"success": False, "message": f"Campos obrigatorios ausentes: {', '.join(missing)}."}), 400
-
     try:
-        validated_type = validate_submission_type(required_fields["tipo"])
-        validated_website = validate_website(data.get("website"))
-        validated_check_date = validate_check_date(data.get("data_verificacao"))
+        fields = read_submission(data)
     except ValueError as exc:
         log_submission_attempt(client_ip, True, "validation")
         return jsonify({"success": False, "message": str(exc)}), 400
 
+    moderated = app.config["CADASTRO_MODERADO"]
+    status = STATUS_PENDENTE if moderated else STATUS_APROVADO
     logo_filename = None
     logo_path = None
 
     try:
-        with sqlite3.connect(DB_FILE_PATH) as conn:
+        with sqlite3.connect(db_path(), timeout=10) as conn:
             conn.execute("BEGIN IMMEDIATE")
-            cursor = conn.cursor()
             prune_submission_attempts(conn, current_ts)
 
             limit_message = submission_limit_message(conn, client_ip, current_ts)
@@ -854,37 +1080,46 @@ def cadastrar_estabelecimento_v2():
                 conn.commit()
                 return jsonify({"success": False, "message": limit_message}), 429
 
-            if establishment_exists(conn, required_fields["nome"], validated_type, required_fields["endereco"]):
+            if establishment_exists(conn, fields["nome"], fields["tipo"], fields["endereco"]):
                 record_submission_attempt(conn, client_ip, current_ts, False, "duplicate")
                 conn.commit()
-                return jsonify(
-                    {"success": False, "message": "Ja existe um cadastro com o mesmo nome, tipo e endereco."}
-                ), 409
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": "Já existe um cadastro com o mesmo nome, tipo e endereço.",
+                        }
+                    ),
+                    409,
+                )
 
             if arquivo and arquivo.filename:
                 safe_name = secure_filename(arquivo.filename)
                 logo_filename, logo_path = save_logo_upload(arquivo, safe_name)
 
-            cursor.execute(
+            conn.execute(
                 """
                 INSERT INTO estabelecimentos (
                     nome, tipo, endereco, email, telefone, website, observacoes,
-                    aceita_lightning, aceita_onchain, aceita_contactless, data_verificacao, logo_filename
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    aceita_lightning, aceita_onchain, aceita_contactless, data_verificacao, logo_filename,
+                    status, criado_em
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    required_fields["nome"],
-                    validated_type,
-                    required_fields["endereco"],
-                    normalize_optional_text(data.get("email")),
-                    normalize_optional_text(data.get("telefone")),
-                    validated_website,
-                    normalize_optional_text(data.get("observacoes")),
-                    parse_checkbox_value(data, "aceita_lightning"),
-                    parse_checkbox_value(data, "aceita_onchain"),
-                    parse_checkbox_value(data, "aceita_contactless"),
-                    validated_check_date,
+                    fields["nome"],
+                    fields["tipo"],
+                    fields["endereco"],
+                    fields["email"],
+                    fields["telefone"],
+                    fields["website"],
+                    fields["observacoes"],
+                    fields["aceita_lightning"],
+                    fields["aceita_onchain"],
+                    fields["aceita_contactless"],
+                    fields["data_verificacao"],
                     logo_filename,
+                    status,
+                    current_ts,
                 ),
             )
             record_submission_attempt(conn, client_ip, current_ts, False, "accepted")
@@ -895,15 +1130,20 @@ def cadastrar_estabelecimento_v2():
         log_submission_attempt(client_ip, True, "logo_validation")
         return jsonify({"success": False, "message": str(exc)}), 400
     except sqlite3.Error:
+        logger.exception("Falha ao gravar cadastro")
         if logo_path and os.path.exists(logo_path):
             os.remove(logo_path)
         log_submission_attempt(client_ip, True, "db_error")
-        return jsonify({"success": False, "message": "Nao foi possivel salvar o cadastro agora."}), 500
+        return jsonify({"success": False, "message": "Não foi possível salvar o cadastro agora."}), 500
 
-    return jsonify({"success": True, "message": "Estabelecimento cadastrado com sucesso."})
-
-
-app.view_functions["cadastrar_estabelecimento"] = cadastrar_estabelecimento_v2
+    if moderated:
+        message = (
+            "Cadastro recebido. Ele aparece no diretório depois de uma revisão rápida da equipe, "
+            "que confere se o local aceita mesmo bitcoin."
+        )
+    else:
+        message = "Estabelecimento cadastrado com sucesso."
+    return jsonify({"success": True, "message": message, "status": status})
 
 
 @app.route("/api/estabelecimentos", methods=["GET"])
