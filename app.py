@@ -15,6 +15,8 @@ from itsdangerous import BadSignature, URLSafeSerializer
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
+import btcmap_sync
+
 
 BASE_DIR = Path(__file__).resolve().parent
 dotenv.load_dotenv(BASE_DIR / ".env")
@@ -78,6 +80,14 @@ app.config["SITE_URL"] = (os.getenv("SITE_URL") or "https://aceita-bitcoin.br-ln
 
 TRUSTED_PROXY_HOPS = int(os.getenv("TRUSTED_PROXY_HOPS") or 1)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=TRUSTED_PROXY_HOPS, x_proto=1, x_host=1)
+
+# Páginas por estado e cidade com os comércios do BTC Map (btcmap_sync.py, 04/11/2026). Só os estados da
+# lista ficam no ar, e o Google só as vê com ONDE_ACEITA_INDEXAR ligado: o Jaime revisa RS e SP antes.
+app.config["BTCMAP_DB_PATH"] = str(btcmap_sync.db_path())
+app.config["ONDE_ACEITA_ESTADOS"] = [
+    uf.strip().upper() for uf in (os.getenv("ONDE_ACEITA_ESTADOS") or "RS,SP").split(",") if uf.strip()
+]
+app.config["ONDE_ACEITA_INDEXAR"] = env_flag("ONDE_ACEITA_INDEXAR", False)
 
 PORT = int(os.getenv("PORT") or 5000)
 ALLOWED_LOGO_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -847,6 +857,192 @@ def directory_entries(establishments):
     return establishments + DIRECTORY_PILOTS
 
 
+# ---------- Onde aceita: páginas por estado e cidade (dados do BTC Map) ----------
+# (nome, "no/na/em" para a frase "Lugares que aceitam bitcoin no Rio Grande do Sul")
+ESTADOS = {
+    "AC": ("Acre", "no"), "AL": ("Alagoas", "em"), "AP": ("Amapá", "no"), "AM": ("Amazonas", "no"),
+    "BA": ("Bahia", "na"), "CE": ("Ceará", "no"), "DF": ("Distrito Federal", "no"),
+    "ES": ("Espírito Santo", "no"), "GO": ("Goiás", "em"), "MA": ("Maranhão", "no"),
+    "MT": ("Mato Grosso", "em"), "MS": ("Mato Grosso do Sul", "em"), "MG": ("Minas Gerais", "em"),
+    "PA": ("Pará", "no"), "PB": ("Paraíba", "na"), "PR": ("Paraná", "no"), "PE": ("Pernambuco", "em"),
+    "PI": ("Piauí", "no"), "RJ": ("Rio de Janeiro", "no estado do"), "RN": ("Rio Grande do Norte", "no"),
+    "RS": ("Rio Grande do Sul", "no"), "RO": ("Rondônia", "em"), "RR": ("Roraima", "em"),
+    "SC": ("Santa Catarina", "em"), "SP": ("São Paulo", "no estado de"), "SE": ("Sergipe", "em"),
+    "TO": ("Tocantins", "no"),
+}
+# SP e RJ têm a capital com o mesmo nome: "no estado de/do" separa a página do estado da página da cidade.
+# Cidade só ganha página própria com esse tanto de locais: página com dois ou três vira conteúdo ralo
+# para o Google. As menores aparecem na página do estado.
+CITY_PAGE_MIN = 10
+# Ícones (Material Icons) que o BTC Map usa no Brasil, com o nome em português. O resto vira "Comércio".
+ICON_LABELS = {
+    "storefront": "Loja", "business": "Empresa e serviços", "computer": "Informática",
+    "medical_services": "Saúde", "restaurant": "Restaurante", "content_cut": "Cabeleireiro e barbearia",
+    "balance": "Advocacia", "hotel": "Hospedagem", "dentistry": "Dentista", "lunch_dining": "Lanchonete",
+    "local_grocery_store": "Mercado", "spa": "Estética e spa", "car_repair": "Oficina",
+    "fitness_center": "Academia", "sports_bar": "Bar", "engineering": "Engenharia",
+    "attach_money": "Serviços financeiros", "local_cafe": "Café", "hardware": "Ferragens e materiais",
+    "directions_car": "Veículos", "smartphone": "Celulares", "local_pizza": "Pizzaria", "bakery_dining": "Padaria",
+    "home": "Imóveis e casa", "icecream": "Sorveteria", "pets": "Pet shop", "school": "Educação",
+    "visibility": "Ótica", "build": "Manutenção", "chair": "Móveis", "local_bar": "Bar",
+    "architecture": "Arquitetura", "local_florist": "Floricultura", "liquor": "Bebidas",
+    "construction": "Construção", "chalet": "Pousada e chalé", "factory": "Indústria",
+    "electric_bolt": "Elétrica e energia", "tour": "Turismo", "local_taxi": "Transporte",
+    "photo_camera": "Fotografia", "currency_exchange": "Câmbio", "local_car_wash": "Lava-rápido",
+    "local_pharmacy": "Farmácia", "sports": "Esportes", "wine_bar": "Bar de vinhos", "local_printshop": "Gráfica",
+    "music_note": "Música", "mic": "Eventos e som", "palette": "Arte", "design_services": "Design",
+    "pedal_bike": "Bicicletas", "diamond": "Joalheria", "celebration": "Festas", "local_hospital": "Hospital e clínica",
+    "local_atm": "Caixa eletrônico de bitcoin", "cake": "Doceria", "pool": "Piscinas", "luggage": "Viagens",
+    "two_wheeler": "Motos", "carpenter": "Marcenaria", "grass": "Jardinagem", "local_hotel": "Hospedagem",
+    "shopping_cart": "Mercado", "local_mall": "Loja", "checkroom": "Roupas", "store": "Loja",
+}
+BTCMAP_PLACE_URL = "https://btcmap.org/merchant/{id}"
+BTCMAP_VERIFY_URL = "https://btcmap.org/verify-location?id={id}"
+
+
+def slugify(value):
+    return "-".join(btcmap_sync.normalize_name(value).split())
+
+
+def onde_aceita_url(uf, municipio=None):
+    if municipio:
+        return url_for("serve_onde_aceita_cidade", uf=uf.lower(), cidade=slugify(municipio))
+    return url_for("serve_onde_aceita_estado", uf=uf.lower())
+
+
+def btcmap_rows(query, params=()):
+    """Lê o banco do BTC Map só para leitura. Sem o banco (antes da primeira cópia), nada."""
+    path = app.config["BTCMAP_DB_PATH"]
+    if not os.path.exists(path):
+        return []
+    conn = sqlite3.connect(f"file:{Path(path).as_posix()}?mode=ro", uri=True, timeout=10)
+    conn.row_factory = sqlite3.Row
+    try:
+        return [dict(row) for row in conn.execute(query, params).fetchall()]
+    except sqlite3.OperationalError:
+        return []
+    finally:
+        conn.close()
+
+
+def btcmap_synced_at():
+    rows = btcmap_rows("SELECT valor FROM meta WHERE chave='sincronizado_em'")
+    if not rows:
+        return None
+    try:
+        return datetime.fromisoformat(rows[0]["valor"]).astimezone()
+    except ValueError:
+        return None
+
+
+def confirmation(verified_at, today=None):
+    """Quando o local foi confirmado no BTC Map: (texto, classe, idade em dias ou None)."""
+    if not verified_at:
+        return "Nunca confirmado no mapa", "is-stale", None
+    try:
+        day = datetime.strptime(verified_at[:10], "%Y-%m-%d")
+    except ValueError:
+        return "Nunca confirmado no mapa", "is-stale", None
+    age = ((today or datetime.now()) - day).days
+    when = day.strftime("%m/%Y")
+    if age < 365:
+        return f"Confirmado em {when}", "is-recent", age
+    if age < 730:
+        return f"Confirmado em {when}", "is-aging", age
+    return f"Não confirmado desde {when}", "is-stale", age
+
+
+def serialize_place(row, today=None):
+    label, css, age = confirmation(row.get("verificado_em"), today)
+    website = row.get("website") or ""
+    return {
+        "id": row["id"],
+        "name": row["nome"],
+        "type_label": ICON_LABELS.get(row.get("icone") or "", "Comércio"),
+        "address": row.get("endereco") or "",
+        "municipio": row["municipio"],
+        "lat": row["lat"],
+        "lon": row["lon"],
+        "accepts_lightning": row.get("lightning") == 1,
+        "accepts_onchain": row.get("onchain") == 1,
+        "accepts_contactless": row.get("aproximacao") == 1,
+        "website": website if is_safe_website(website) else "",
+        "confirmation": label,
+        "confirmation_class": css,
+        "recent": age is not None and age < 365,
+        "btcmap_url": BTCMAP_PLACE_URL.format(id=row["id"]),
+        "verify_url": BTCMAP_VERIFY_URL.format(id=row["id"]),
+        "sort_key": (0 if age is not None else 1, age if age is not None else 0, btcmap_sync.normalize_name(row["nome"])),
+    }
+
+
+def our_city(address):
+    """(cidade, UF) de um cadastro nosso, que vem como "Rua X, 10 - Bairro, Cidade - UF, CEP"."""
+    matches = re.findall(r"([^,]+?)\s*-\s*([A-Z]{2})\b", address or "")
+    if not matches:
+        return None, None
+    city, uf = matches[-1]
+    return city.strip(), uf if uf in ESTADOS else None
+
+
+def our_establishments(uf, municipio=None):
+    found = []
+    for establishment in fetch_establishments():
+        city, city_uf = our_city(establishment["address"])
+        if city_uf != uf:
+            continue
+        if municipio and btcmap_sync.normalize_name(city) != btcmap_sync.normalize_name(municipio):
+            continue
+        found.append(establishment)
+    return found
+
+
+def published_state(uf):
+    """A sigla em maiúsculas, se o estado está no ar; senão 404."""
+    code = (uf or "").upper()
+    if code not in ESTADOS or code not in app.config["ONDE_ACEITA_ESTADOS"]:
+        abort(404)
+    return code
+
+
+def state_cities(code):
+    rows = btcmap_rows(
+        "SELECT municipio, COUNT(*) n FROM lugares WHERE uf=? GROUP BY municipio ORDER BY n DESC, municipio", (code,)
+    )
+    return [
+        {"name": row["municipio"], "count": row["n"], "slug": slugify(row["municipio"]),
+         "url": onde_aceita_url(code, row["municipio"]) if row["n"] >= CITY_PAGE_MIN else None}
+        for row in rows
+    ]
+
+
+def places_for(code, municipio=None):
+    query, params = "SELECT * FROM lugares WHERE uf=?", [code]
+    if municipio:
+        query += " AND municipio=?"
+        params.append(municipio)
+    today = datetime.now()
+    places = [serialize_place(row, today) for row in btcmap_rows(query, params)]
+    return sorted(places, key=lambda place: place["sort_key"])
+
+
+def onde_aceita_context(code, places):
+    synced = btcmap_synced_at()
+    return {
+        "page": "onde-aceita",
+        "robots_meta": "index,follow" if app.config["ONDE_ACEITA_INDEXAR"] else "noindex,follow",
+        "uf": code,
+        "state_name": ESTADOS[code][0],
+        "state_prep": ESTADOS[code][1],
+        "state_url": onde_aceita_url(code),
+        "recent_count": sum(1 for place in places if place["recent"]),
+        "synced_label": synced.strftime("%d/%m/%Y") if synced else None,
+        "faucet_url": brln_url("faucet/"),
+        "wallets_url": brln_url("guias/carteira-lightning/"),
+        "own_bank_url": brln_url("guias/seja-o-seu-proprio-banco/"),
+    }
+
+
 def build_home_stats(establishments):
     entries = directory_entries(establishments)
     mapped_cities = {entry["city_label"] for entry in entries if entry["city_label"]}
@@ -865,6 +1061,8 @@ def page_section(endpoint):
     """Marca o item do menu como ativo, inclusive nas paginas filhas da trilha Aprenda."""
     if endpoint == "serve_aprenda":
         return request.endpoint in {"serve_aprenda", "serve_aprenda_artigo"}
+    if endpoint == "serve_estabelecimentos":
+        return request.endpoint in {"serve_estabelecimentos", "serve_onde_aceita_estado", "serve_onde_aceita_cidade"}
     return request.endpoint == endpoint
 
 
@@ -1072,6 +1270,71 @@ def serve_estabelecimentos():
     )
 
 
+@app.route("/onde-aceita/<uf>")
+def serve_onde_aceita_estado(uf):
+    code = published_state(uf)
+    if uf != code.lower():
+        return redirect(onde_aceita_url(code), code=301)
+    places = places_for(code)
+    cities = state_cities(code)
+    with_page = {city["name"] for city in cities if city["url"]}
+    # Na página do estado, os locais das cidades pequenas; as grandes têm página própria.
+    groups = {}
+    for place in places:
+        if place["municipio"] not in with_page:
+            groups.setdefault(place["municipio"], []).append(place)
+    small_cities = [
+        {"name": city["name"], "slug": city["slug"], "places": groups[city["name"]]}
+        for city in cities if city["name"] in groups
+    ]
+    context = onde_aceita_context(code, places)
+    prep, name = context["state_prep"], context["state_name"]
+    return render_template(
+        "onde_aceita.html",
+        page_title=f"Lugares que aceitam bitcoin {prep} {name} | Aceita Bitcoin?",
+        page_description=(
+            f"{len(places)} lugares que aceitam bitcoin {prep} {name}, em {len(cities)} cidades, com a data em que "
+            "cada um foi confirmado no BTC Map. Pague com Lightning e confirme no balcão."
+        ),
+        heading=f"Lugares que aceitam bitcoin {prep} {name}",
+        city=None,
+        places=places,
+        cities=cities,
+        small_cities=small_cities,
+        ours=our_establishments(code),
+        **context,
+    )
+
+
+@app.route("/onde-aceita/<uf>/<cidade>")
+def serve_onde_aceita_cidade(uf, cidade):
+    code = published_state(uf)
+    city = next((item for item in state_cities(code) if item["slug"] == cidade), None)
+    if not city:
+        abort(404)
+    if not city["url"]:
+        return redirect(onde_aceita_url(code) + "#" + city["slug"], code=302)
+    if uf != code.lower():
+        return redirect(city["url"], code=301)
+    places = places_for(code, city["name"])
+    context = onde_aceita_context(code, places)
+    return render_template(
+        "onde_aceita.html",
+        page_title=f"Lugares que aceitam bitcoin em {city['name']} ({code}) | Aceita Bitcoin?",
+        page_description=(
+            f"{len(places)} lugares que aceitam bitcoin em {city['name']}, {context['state_name']}, com a data em que "
+            "cada um foi confirmado no BTC Map. Pague com Lightning e confirme no balcão."
+        ),
+        heading=f"Lugares que aceitam bitcoin em {city['name']}",
+        city=city,
+        places=places,
+        cities=[],
+        small_cities=[],
+        ours=our_establishments(code, city["name"]),
+        **context,
+    )
+
+
 @app.route("/robots.txt")
 def serve_robots():
     body = f"User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {app.config['SITE_URL']}/sitemap.xml\n"
@@ -1083,6 +1346,11 @@ def serve_sitemap():
     paths = [url_for("serve_index"), url_for("serve_aprenda")]
     paths += [url_for(item["endpoint"], **({"slug": item["slug"]} if item["slug"] else {})) for item in LEARN_TRAIL]
     paths += [url_for("serve_estabelecimentos"), url_for("serve_materiais"), url_for("serve_sobre"), url_for("serve_cadastro")]
+    if app.config["ONDE_ACEITA_INDEXAR"]:
+        for code in app.config["ONDE_ACEITA_ESTADOS"]:
+            if code in ESTADOS:
+                paths.append(onde_aceita_url(code))
+                paths += [city["url"] for city in state_cities(code) if city["url"]]
     entries = "".join(f"<url><loc>{app.config['SITE_URL']}{path}</loc></url>" for path in paths)
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>'

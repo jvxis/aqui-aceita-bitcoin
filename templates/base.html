@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page_title }}</title>
   <meta name="description" content="{{ page_description }}">
-  <meta name="robots" content="index,follow">
+  <meta name="robots" content="{{ robots_meta|default('index,follow') }}">
   <meta name="author" content="BR⚡LN">
   <meta name="theme-color" content="#0d1728">
   <meta property="og:type" content="website">

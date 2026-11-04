@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% macro place_card(place) %}
+  <article class="establishment-card place-card">
+    <div class="establishment-body">
+      <div class="badge-row">
+        <span class="pill">{{ place.type_label }}</span>
+      </div>
+      <h3>{{ place.name }}</h3>
+      {% if place.address %}<p>{{ place.address }}</p>{% endif %}
+      <div class="badge-row">
+        {% if place.accepts_lightning %}<span class="payment-badge is-lightning">Lightning</span>{% endif %}
+        {% if place.accepts_onchain %}<span class="payment-badge is-onchain">On-chain</span>{% endif %}
+        {% if place.accepts_contactless %}<span class="payment-badge is-contactless">Por aproximação</span>{% endif %}
+      </div>
+      <p class="place-status {{ place.confirmation_class }}">
+        <i class="fa-solid {{ 'fa-circle-check' if place.confirmation_class == 'is-recent' else 'fa-clock-rotate-left' }}" aria-hidden="true"></i>
+        {{ place.confirmation }}
+      </p>
+      <div class="place-links">
+        <a href="{{ place.btcmap_url }}" target="_blank" rel="noopener" class="inline-link">Ver no BTC Map</a>
+        <a href="{{ place.verify_url }}" target="_blank" rel="noopener" class="inline-link">Passou lá? Confirme</a>
+        {% if place.website %}<a href="{{ place.website }}" target="_blank" rel="noopener nofollow ugc" class="inline-link">Site</a>{% endif %}
+      </div>
+    </div>
+  </article>
+{% endmacro %}
+
+{% block extra_head %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": {{ heading|tojson }},
+      "numberOfItems": {{ places|length }},
+      "itemListElement": [
+        {% for place in places[:100] %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "item": {
+            "@type": "LocalBusiness",
+            "name": {{ place.name|tojson }},
+            {% if place.address %}"address": {{ (place.address ~ ", " ~ place.municipio ~ " - " ~ uf)|tojson }},{% endif %}
+            "geo": {"@type": "GeoCoordinates", "latitude": {{ place.lat }}, "longitude": {{ place.lon }}},
+            "url": {{ place.btcmap_url|tojson }}
+          }
+        }{{ "," if not loop.last }}
+        {% endfor %}
+      ]
+    }
+  </script>
+{% endblock %}
+
+{% block content %}
+  <section class="hero-section compact-hero directory-hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">
+          {% if city %}<a href="{{ state_url }}" class="eyebrow-link">Onde aceita · {{ state_name }}</a>{% else %}Onde aceita · {{ state_name }}{% endif %}
+        </span>
+        <h1 class="headline">{{ heading }}</h1>
+        <p class="lead">
+          {% if places %}
+            {{ places|length }} {{ "lugar" if places|length == 1 else "lugares" }}{% if not city %} em {{ cities|length }} {{ "cidade" if cities|length == 1 else "cidades" }}{% endif %},
+            segundo o BTC Map. {{ recent_count }} {{ "foi confirmado" if recent_count == 1 else "foram confirmados" }} por
+            alguém no local nos últimos 12 meses. Antes de pagar, confirme no balcão.
+          {% else %}
+            Ainda não há lugares no BTC Map por aqui. Se você conhece um, cadastre.
+          {% endif %}
+        </p>
+      </div>
+      <aside class="hero-card">
+        <span class="card-kicker">Para pagar</span>
+        <h2 class="hero-card-title">Ainda não tem sats?</h2>
+        <p class="muted-text">
+          Pegue os primeiros de graça no faucet do BR⚡LN e veja qual carteira Lightning usar no celular.
+        </p>
+        <div class="hero-card-actions">
+          <a href="{{ faucet_url }}" class="btn btn-cta">Pegar os primeiros sats</a>
+          <a href="{{ wallets_url }}" class="inline-link">Qual carteira usar</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  {% if ours %}
+  <section class="page-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Cadastro do Aceita Bitcoin?</span>
+        <h2 class="section-heading">Conferidos pelo projeto</h2>
+      </div>
+    </div>
+    <div class="card-grid directory-grid">
+      {% for establishment in ours %}
+      <article class="establishment-card">
+        <div class="establishment-logo-wrap">
+          <img src="{{ establishment.logo_url }}" alt="{{ establishment.name }}" class="establishment-logo" loading="lazy">
+        </div>
+        <div class="establishment-body">
+          <div class="badge-row">
+            <span class="pill">{{ establishment.type_label }}</span>
+            <span class="pill pill-brand">Cadastrado aqui</span>
+          </div>
+          <h3>{{ establishment.name }}</h3>
+          <p>{{ establishment.address }}</p>
+          <div class="badge-row">
+            {% if establishment.accepts_lightning %}<span class="payment-badge is-lightning">Lightning</span>{% endif %}
+            {% if establishment.accepts_onchain %}<span class="payment-badge is-onchain">On-chain</span>{% endif %}
+            {% if establishment.accepts_contactless %}<span class="payment-badge is-contactless">Por aproximação</span>{% endif %}
+          </div>
+          {% if establishment.website %}<a href="{{ establishment.website }}" target="_blank" rel="noopener nofollow ugc" class="inline-link">Abrir site</a>{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if cities %}
+  <section class="page-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Cidades</span>
+        <h2 class="section-heading">Escolha a cidade</h2>
+      </div>
+    </div>
+    <ul class="city-list">
+      {% for item in cities %}
+      <li>
+        <a href="{{ item.url or ('#' ~ item.slug) }}" class="city-chip{{ ' has-page' if item.url }}">
+          <span>{{ item.name }}{% if item.url %} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>{% endif %}</span>
+          <span class="city-count">{{ item.count }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if city %}
+  <section class="page-panel">
+    <div class="card-grid directory-grid">
+      {% for place in places %}{{ place_card(place) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% for group in small_cities %}
+  <section class="page-panel" id="{{ group.slug }}">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">{{ group.places|length }} {{ "lugar" if group.places|length == 1 else "lugares" }}</span>
+        <h2 class="section-heading">{{ group.name }}</h2>
+      </div>
+    </div>
+    <div class="card-grid directory-grid">
+      {% for place in group.places %}{{ place_card(place) }}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  <section class="page-panel split-panel">
+    <div>
+      <span class="section-kicker">Ajude quem vem depois</span>
+      <h2 class="section-heading">Passou num desses lugares?</h2>
+      <p>
+        Comércio fecha, troca de dono ou deixa de aceitar. Quando alguém confirma no BTC Map que o lugar ainda aceita
+        bitcoin, a data aparece aqui. Leva um minuto: abra "Passou lá? Confirme" no cartão do lugar.
+      </p>
+    </div>
+    <div>
+      <span class="section-kicker">Tem um comércio{% if city %} em {{ city.name }}{% endif %}?</span>
+      <h2 class="section-heading">Receba em Lightning, sem intermediário</h2>
+      <p>
+        A trilha Aprenda mostra do primeiro teste até a primeira venda. Quem quer ir além pode receber no próprio node
+        Lightning, sem depender de empresa nenhuma.
+      </p>
+      <div class="hero-card-actions">
+        <a href="{{ url_for('serve_aprenda') }}" class="btn btn-secondary">Começar pela trilha Aprenda</a>
+        <a href="{{ own_bank_url }}" class="inline-link">Seja o seu próprio banco</a>
+        <a href="{{ url_for('serve_cadastro') }}" class="inline-link">Cadastrar o meu comércio</a>
+      </div>
+    </div>
+  </section>
+
+  <p class="data-credit">
+    Lugares do <a href="https://btcmap.org/" target="_blank" rel="noopener">BTC Map</a>, com dados do
+    OpenStreetMap: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>,
+    licença ODbL.{% if synced_label %} Atualizado em {{ synced_label }}.{% endif %}
+    A cidade de cada lugar é aproximada pela localização no mapa.
+  </p>
+{% endblock %}

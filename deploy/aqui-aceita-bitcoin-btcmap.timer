@@ -1,0 +1,11 @@
+[Unit]
+Description=Aceita Bitcoin? - copia os lugares do BTC Map uma vez por dia
+
+[Timer]
+OnCalendar=*-*-* 05:20
+RandomizedDelaySec=20m
+Persistent=true
+Unit=aqui-aceita-bitcoin-btcmap.service
+
+[Install]
+WantedBy=timers.target
