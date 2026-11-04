@@ -11,6 +11,13 @@
       </p>
 
       <div id="formFeedback" class="message-box" role="status" aria-live="polite" hidden></div>
+      <div id="cadastroProximoPasso" class="callout" hidden>
+        <strong>Enquanto a equipe confere: o próximo passo do seu comércio</strong>
+        <p>
+          Quem já recebe com frequência pode receber no próprio node Lightning, sem empresa no meio.
+          <a href="{{ url_for('serve_aprenda_artigo', slug='node-proprio') }}" class="inline-link">Veja o que ganha e o que custa</a>.
+        </p>
+      </div>
 
       <form id="cadastroForm" class="stack-form" enctype="multipart/form-data">
         <input type="hidden" name="submission_token" value="{{ submission_token }}">

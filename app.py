@@ -95,7 +95,6 @@ ALLOWED_LOGO_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 BRLN_SITE = "https://br-ln.com"
-BRLN_ORIGIN_PARAM = "origem=aceita"
 
 STATUS_PENDENTE = "pendente"
 STATUS_APROVADO = "aprovado"
@@ -212,6 +211,18 @@ LEARN_TRAIL = [
         "summary": "Frase de recuperação, golpes comuns no balcão, celular do caixa e o que fazer com o que entra.",
         "description": "Como proteger a carteira do comércio, evitar golpes comuns e cuidar do que é recebido em bitcoin.",
     },
+    {
+        # 04/11/2026: o gancho do comerciante para o node Lightning e os guias do BR⚡LN.
+        "slug": "node-proprio",
+        "endpoint": "serve_aprenda_artigo",
+        "title": "Receber no próprio node",
+        "kicker": "Passo 6",
+        "summary": "Para quem já recebe com frequência: o que o comércio ganha com um node Lightning, o que custa e como começar sem arriscar.",
+        "description": (
+            "Vantagens e custos de o comércio receber bitcoin no próprio node Lightning, sem intermediário, e como "
+            "começar com o LightningOS, grátis."
+        ),
+    },
 ]
 LEARN_ARTICLES = {item["slug"]: item for item in LEARN_TRAIL if item["slug"]}
 
@@ -222,15 +233,16 @@ SOCIAL_LINKS = [
 ]
 
 
-def brln_url(path=""):
-    """Link para br-ln.com com a marca de origem, para medir quem veio daqui."""
+def brln_url(path="", origem="aceita"):
+    """Link para br-ln.com com a marca de origem, para medir quem veio daqui. O passo "Receber no próprio
+    node" usa origem=aceita-node, para o admin separar o comerciante que foi atrás do node."""
     path = path.lstrip("/")
     fragment = ""
     if "#" in path:
         path, fragment = path.split("#", 1)
         fragment = f"#{fragment}"
     separator = "&" if "?" in path else "?"
-    return f"{BRLN_SITE}/{path}{separator}{BRLN_ORIGIN_PARAM}{fragment}"
+    return f"{BRLN_SITE}/{path}{separator}origem={origem}{fragment}"
 
 
 FOOTER_LINKS = [
@@ -1063,7 +1075,7 @@ def onde_aceita_context(code, places, recent_count=None):
         "synced_label": synced.strftime("%d/%m/%Y") if synced else None,
         "faucet_url": brln_url("faucet/"),
         "wallets_url": brln_url("guias/carteira-lightning/"),
-        "own_bank_url": brln_url("guias/seja-o-seu-proprio-banco/"),
+        "node_step_url": url_for("serve_aprenda_artigo", slug="node-proprio"),
     }
 
 
@@ -1187,8 +1199,8 @@ def serve_aprenda():
         page="aprenda",
         page_title="Aprenda a aceitar bitcoin | Aceita Bitcoin?",
         page_description=(
-            "Trilha em cinco passos para aceitar bitcoin e Lightning: por que aceitar, como começar, "
-            "carteiras, como receber e cuidados de segurança."
+            "Trilha em seis passos para aceitar bitcoin e Lightning: por que aceitar, como começar, "
+            "carteiras, como receber, cuidados de segurança e receber no próprio node."
         ),
     )
 

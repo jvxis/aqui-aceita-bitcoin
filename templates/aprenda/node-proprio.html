@@ -1,0 +1,121 @@
+{% extends "aprenda/_artigo.html" %}
+{% from "aprenda/_macros.html" import related_card with context %}
+
+{# Passo 6 (04/11/2026). Cada fato sobre node, LightningOS e clube vem dos guias do br-ln.com: como montar um
+   node, primeiros passos, Lightning Address e laboratório regtest. Mudou lá, muda aqui. #}
+
+{% block article_body %}
+  <p>
+    Até aqui, a carteira no celular resolve: o cliente paga e o dinheiro chega em segundos. Para quem já recebe toda
+    semana, existe um passo além: um <strong>node Lightning</strong>, um computador do próprio comércio, ligado o tempo
+    todo, que recebe os pagamentos sem nenhuma empresa no meio. Não é para o primeiro dia. Este passo mostra o que o
+    comércio ganha, o que custa e como começar sem arriscar.
+  </p>
+
+  <h2>O que o comércio ganha</h2>
+  <ul>
+    <li>
+      <strong>O dinheiro fica com você.</strong> Nenhuma empresa guarda os seus sats, então ninguém pode bloquear a
+      conta, limitar o que você recebe ou cobrar para você sacar.
+    </li>
+    <li>
+      <strong>Recebe a qualquer hora, sem pedir licença.</strong> De madrugada, no feriado e no fim de semana, sem
+      depender de uma empresa de pagamento estar no ar ou aprovar a venda.
+    </li>
+    <li>
+      <strong>Mais privacidade nas vendas.</strong> O histórico do caixa fica no seu computador, não no cadastro de um
+      serviço de terceiros.
+    </li>
+    <li>
+      <strong>Endereço Lightning próprio, de graça.</strong> O
+      <a href="https://pay.br-ln.com/" target="_blank" rel="noopener">pay.br-ln.com</a> cria um
+      <code>loja@pay.br-ln.com</code> que gera as faturas direto no seu node, sem cadastro e sem precisar ser membro
+      do clube. Os sats caem no seu node, não no BR⚡LN.
+    </li>
+  </ul>
+
+  <h2>O que custa</h2>
+  <ul>
+    <li>
+      <strong>Um computador só para isso, ligado 24 horas.</strong> Um mini PC ou um Raspberry Pi 5, com SSD. Internet
+      estável e, se possível, um nobreak: node que cai toda hora perde canais.
+    </li>
+    <li>
+      <strong>O sistema é grátis.</strong> O LightningOS, mantido pelo BR⚡LN, é gratuito e de código aberto. O custo é
+      o do computador e o dos sats que você coloca nos canais.
+    </li>
+    <li>
+      <strong>Cuidados que passam a ser seus.</strong> A seed em papel, o backup dos canais fora da máquina e uma torre
+      de vigia (watchtower), que reage se alguém tentar fechar um canal seu com um estado antigo enquanto o node está
+      fora do ar.
+    </li>
+    <li>
+      <strong>Alguém que cuide dele.</strong> Não precisa ser técnico, mas precisa olhar de vez em quando se o node
+      está no ar e atualizar o sistema.
+    </li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <strong>A pegadinha do comércio: espaço para receber</strong>
+    <p>
+      Num canal que você abre, todo o saldo começa do seu lado: dá para enviar, mas ainda não dá para receber. Comércio
+      recebe muito mais do que paga, então precisa desse espaço, a <strong>liquidez de entrada</strong>, antes da
+      primeira venda. Quem não sabe disso monta o node, abre o canal e descobre no caixa que o pagamento do cliente não
+      entra. Os guias do BR⚡LN mostram como resolver.
+    </p>
+  </div>
+
+  <h2>Quando vale a pena</h2>
+  <ul>
+    <li>Você já recebe em bitcoin com frequência, não só de vez em quando.</li>
+    <li>O que acumula na carteira do celular já é um valor que você não gostaria de perder.</li>
+    <li>Tem alguém no negócio disposto a cuidar de um computador ligado o tempo todo.</li>
+  </ul>
+  <p>
+    Se ainda não é o caso, continue com a carteira do passo 3. Ela faz o trabalho, e o node pode esperar.
+  </p>
+
+  <h2>Como começar sem arriscar</h2>
+  <ol>
+    <li>
+      <strong>Treine antes.</strong> O
+      <a href="{{ brln_url('guias/laboratorio-lightning-regtest/', 'aceita-node') }}" target="_blank" rel="noopener">laboratório do LightningOS</a>
+      monta três nodes no seu computador, com moedas sem valor. Dá para abrir canal, receber, rebalancear e ver com
+      os próprios olhos que o canal novo nasce sem espaço para receber, sem perder nada.
+    </li>
+    <li>
+      <strong>Monte o node.</strong> O guia
+      <a href="{{ brln_url('guias/como-montar-um-node-lightning/', 'aceita-node') }}" target="_blank" rel="noopener">Como montar um node Lightning em casa</a>
+      vai do computador ao primeiro canal, com o LightningOS.
+    </li>
+    <li>
+      <strong>Teste de fora.</strong> As
+      <a href="{{ brln_url('ferramentas/', 'aceita-node') }}" target="_blank" rel="noopener">ferramentas grátis do BR⚡LN</a>
+      dizem se outros nodes conseguem chegar ao seu e dão uma nota de 0 a 100 ao node, com o que melhorar.
+    </li>
+    <li><strong>Crie o endereço Lightning</strong> no pay.br-ln.com e teste com um pagamento pequeno.</li>
+    <li><strong>Comece com pouco.</strong> Aprenda com valores baixos antes de levar o caixa inteiro para o node.</li>
+  </ol>
+
+  <div class="callout">
+    <strong>Com o BR⚡LN Club, o caminho fica mais curto</strong>
+    <p>
+      Membros usam o Bitcoin do clube e o node começa no mesmo dia, sem baixar a blockchain inteira. O primeiro canal
+      pode ser com o BR⚡LN Hub, e o espaço para receber vem da Carteira do clube ou de um canal comprado de outro
+      membro no Mercado. Tem ainda a Watch Tower, alertas quando o node cai e um chat em português com quem já opera
+      node. A Clearnet do clube é contratada à parte.
+    </p>
+    <p>
+      <a href="{{ brln_url('', 'aceita-node') }}" class="btn btn-secondary" target="_blank" rel="noopener">Conhecer o BR⚡LN Club</a>
+    </p>
+  </div>
+{% endblock %}
+
+{% block aside %}
+  {{ related_card([
+    {"title": "Como montar um node", "text": "Do computador ao primeiro canal, com o LightningOS, grátis.", "url": brln_url("guias/como-montar-um-node-lightning/", "aceita-node"), "external": True},
+    {"title": "Laboratório Lightning", "text": "Três nodes no seu computador, com moedas sem valor, para treinar.", "url": brln_url("guias/laboratorio-lightning-regtest/", "aceita-node"), "external": True},
+    {"title": "Seja o seu próprio banco", "text": "Autocustódia e soberania financeira, no guia do BR⚡LN.", "url": brln_url("guias/seja-o-seu-proprio-banco/", "aceita-node"), "external": True},
+    {"title": "Ferramentas grátis", "text": "Teste de acesso, Raio-X do node e calculadora de canal.", "url": brln_url("ferramentas/", "aceita-node"), "external": True},
+  ]) }}
+{% endblock %}

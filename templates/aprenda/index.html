@@ -26,7 +26,7 @@
 
   <section class="page-panel">
     <span class="section-kicker">A trilha</span>
-    <h2 class="section-heading">Cinco passos</h2>
+    <h2 class="section-heading">Seis passos</h2>
     <div class="trail-grid">
       {% for step in learn_trail %}
         <a href="{{ step_url(step) }}" class="step-card trail-card">
@@ -139,8 +139,8 @@
       <details>
         <summary>Preciso montar um node?</summary>
         <p>
-          Não para começar. O node próprio é para quem quer independência total, e o BR⚡LN tem um
-          <a href="{{ brln_url('guias/como-montar-um-node-lightning/') }}" target="_blank" rel="noopener">guia para montar o seu</a>.
+          Não para começar. O node próprio é para quem já recebe com frequência e quer independência total: o
+          <a href="{{ url_for('serve_aprenda_artigo', slug='node-proprio') }}">passo 6</a> mostra o que o comércio ganha e o que custa.
         </p>
       </details>
       <details>

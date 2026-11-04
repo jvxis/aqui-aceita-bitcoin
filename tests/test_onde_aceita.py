@@ -185,3 +185,7 @@ def test_long_lists_scroll_inside_a_box(onde, client):
     assert 'class="scroll-box"' in city
     state = client.get("/onde-aceita/sp").get_data(as_text=True)
     assert "Outras cidades no estado de São Paulo" in state and state.count('class="scroll-box"') == 1
+
+
+def test_merchant_block_points_to_the_node_step(onde, client):
+    assert 'href="/aprenda/node-proprio"' in client.get("/onde-aceita/sp/sao-paulo").get_data(as_text=True)

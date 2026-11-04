@@ -214,6 +214,10 @@ function initCadastroForm() {
       }
 
       showMessage(feedback, "success", result.message);
+      const nextStep = document.getElementById("cadastroProximoPasso");
+      if (nextStep) {
+        nextStep.hidden = false;
+      }
       form.reset();
       document.getElementById("checkDate").value = localDateISO();
     } catch (error) {

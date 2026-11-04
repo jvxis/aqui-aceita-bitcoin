@@ -18,6 +18,7 @@ PAGINAS = [
     "/aprenda/como-comecar",
     "/aprenda/como-receber",
     "/aprenda/seguranca",
+    "/aprenda/node-proprio",
     "/carteiras",
     "/cadastro",
     "/materiais",
@@ -336,3 +337,19 @@ def test_analytics_only_through_consent_script(client):
     assert "googletagmanager.com/gtag/js" not in html
     assert "script-src 'self' https://www.googletagmanager.com" in csp
     assert "https://*.google-analytics.com" in csp
+
+
+def test_node_step_hooks_to_brln_with_its_own_origin(client):
+    html = client.get("/aprenda/node-proprio").get_data(as_text=True)
+    assert "Passo 6 de 6" in html and "liquidez de entrada" in html
+    for path in ("guias/como-montar-um-node-lightning/", "guias/laboratorio-lightning-regtest/", "ferramentas/"):
+        assert f"https://br-ln.com/{path}?origem=aceita-node" in html
+    assert 'href="https://br-ln.com/?origem=aceita-node"' in html
+    # a Clearnet é paga à parte: nunca como parte da assinatura
+    assert "Clearnet do clube é contratada à parte" in html
+    # o passo 5 aponta para o 6, e o resto do site continua com origem=aceita
+    seguranca = client.get("/aprenda/seguranca").get_data(as_text=True)
+    assert 'href="/aprenda/node-proprio"' in seguranca
+    assert "origem=aceita-node" not in client.get("/aprenda/como-comecar").get_data(as_text=True)
+    assert 'id="cadastroProximoPasso"' in client.get("/cadastro").get_data(as_text=True)
+    assert "/aprenda/node-proprio</loc>" in client.get("/sitemap.xml").get_data(as_text=True)

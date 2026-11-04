@@ -189,12 +189,12 @@
       <span class="section-kicker">Tem um comércio{% if city %} em {{ city.name }}{% endif %}?</span>
       <h2 class="section-heading">Receba em Lightning, sem intermediário</h2>
       <p>
-        A trilha Aprenda mostra do primeiro teste até a primeira venda. Quem quer ir além pode receber no próprio node
-        Lightning, sem depender de empresa nenhuma.
+        A trilha Aprenda mostra do primeiro teste até a primeira venda. Quem já recebe com frequência pode ir além e
+        receber no próprio node Lightning, sem depender de empresa nenhuma.
       </p>
       <div class="hero-card-actions">
         <a href="{{ url_for('serve_aprenda') }}" class="btn btn-secondary">Começar pela trilha Aprenda</a>
-        <a href="{{ own_bank_url }}" class="inline-link">Seja o seu próprio banco</a>
+        <a href="{{ node_step_url }}" class="inline-link">Receber no próprio node</a>
         <a href="{{ url_for('serve_cadastro') }}" class="inline-link">Cadastrar o meu comércio</a>
       </div>
     </div>
