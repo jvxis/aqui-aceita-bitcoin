@@ -19,6 +19,26 @@
     </div>
   </section>
 
+  {% if states %}
+  <section class="page-panel">
+    <div class="section-heading-row">
+      <div>
+        <span class="section-kicker">Pelo Brasil</span>
+        <h2 class="section-heading">Lugares que aceitam bitcoin por estado</h2>
+      </div>
+      <a href="{{ url_for('serve_onde_aceita') }}" class="btn btn-secondary">Ver todos os estados</a>
+    </div>
+    <p class="muted-text">
+      Os lugares do BTC Map em cada estado e cidade, com a data em que cada um foi confirmado por alguém no local.
+    </p>
+    <ul class="city-list">
+      {% for state in states %}
+      <li><a href="{{ state.url }}" class="city-chip"><span>{{ state.name }}</span><span class="city-count">{{ state.count|milhar }}</span></a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   <section class="page-panel">
     <div class="filter-bar">
       <label class="field field-inline">

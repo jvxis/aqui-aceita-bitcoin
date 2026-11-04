@@ -1,8 +1,9 @@
 [Unit]
-Description=Aceita Bitcoin? - copia os lugares do BTC Map uma vez por dia
+Description=Aceita Bitcoin? - copia os lugares do BTC Map uma vez por semana
 
 [Timer]
-OnCalendar=*-*-* 05:20
+# Semanal (pedido do Jaime, 04/11/2026): os lugares mudam devagar.
+OnCalendar=Mon *-*-* 05:20
 RandomizedDelaySec=20m
 Persistent=true
 Unit=aqui-aceita-bitcoin-btcmap.service

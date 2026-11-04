@@ -164,3 +164,24 @@ def test_place_card_escapes_names(onde, client, tmp_path):
     html = client.get("/onde-aceita/sp/sao-paulo").get_data(as_text=True)
     assert "<script>x</script>" not in html and "javascript:alert" not in html
     json.loads(html.split('<script type="application/ld+json">')[3].split("</script>")[0])
+
+
+def test_country_page_and_all_states_by_default(onde, client):
+    onde.app.config["ONDE_ACEITA_ESTADOS"] = []
+    html = client.get("/onde-aceita").get_data(as_text=True)
+    assert "Lugares que aceitam bitcoin no Brasil" in html and "27 lugares em 3 estados" in html
+    # do estado com mais lugares para o com menos
+    assert html.index('href="/onde-aceita/sp"') < html.index('href="/onde-aceita/mg"') < html.index('href="/onde-aceita/rs"')
+    assert client.get("/onde-aceita/mg").status_code == 200
+    assert client.get("/onde-aceita/mg/belo-horizonte").status_code == 200
+    # estado sem nenhum lugar no mapa não aparece na lista, mas a página responde
+    assert 'href="/onde-aceita/ac"' not in html and client.get("/onde-aceita/ac").status_code == 200
+    directory = client.get("/estabelecimentos").get_data(as_text=True)
+    assert "Lugares que aceitam bitcoin por estado" in directory and 'href="/onde-aceita/mg"' in directory
+
+
+def test_long_lists_scroll_inside_a_box(onde, client):
+    city = client.get("/onde-aceita/sp/sao-paulo").get_data(as_text=True)
+    assert 'class="scroll-box"' in city
+    state = client.get("/onde-aceita/sp").get_data(as_text=True)
+    assert "Outras cidades no estado de São Paulo" in state and state.count('class="scroll-box"') == 1

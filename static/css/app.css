@@ -1745,3 +1745,20 @@ textarea {
 @media (max-width: 820px) {
   .split-panel { grid-template-columns: 1fr; }
 }
+/* Lista longa rola dentro da própria caixa, em vez de virar uma tripa na página (pedido do Jaime, 04/11/2026). */
+.scroll-box {
+  max-height: min(72vh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 10px 4px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(78, 224, 193, 0.45) transparent;
+}
+.scroll-box.scroll-box-short { max-height: 260px; }
+.scroll-box:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: var(--radius-sm); }
+.scroll-box::-webkit-scrollbar { width: 8px; }
+.scroll-box::-webkit-scrollbar-thumb { background: rgba(78, 224, 193, 0.45); border-radius: 999px; }
+.scroll-box::-webkit-scrollbar-track { background: transparent; }
+.city-group + .city-group { margin-top: 28px; }
+.city-group { scroll-margin-top: 12px; }
+.city-group-title { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 1.15rem; }

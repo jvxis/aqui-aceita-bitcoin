@@ -10,7 +10,7 @@ tudo; depois só o que mudou desde o último `updated_at` visto, com os removido
 contorno do Brasil vem da área 173 do BTC Map. O município sai da etiqueta addr:city do OpenStreetMap quando
 ela bate com um nome do IBGE perto dali; sem ela, da sede de município mais próxima.
 
-Uso: python btcmap_sync.py run      (o timer aqui-aceita-bitcoin-btcmap roda uma vez por dia)
+Uso: python btcmap_sync.py run      (o timer aqui-aceita-bitcoin-btcmap roda às segundas)
 """
 import csv
 import json

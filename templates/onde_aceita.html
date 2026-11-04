@@ -27,6 +27,7 @@
 {% endmacro %}
 
 {% block extra_head %}
+  {% if places %}
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -50,6 +51,7 @@
       ]
     }
   </script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -57,13 +59,15 @@
     <div class="hero-grid">
       <div class="hero-copy">
         <span class="eyebrow">
-          {% if city %}<a href="{{ state_url }}" class="eyebrow-link">Onde aceita · {{ state_name }}</a>{% else %}Onde aceita · {{ state_name }}{% endif %}
+          {%- if scope == "pais" %}Onde aceita · Brasil
+          {%- else %}<a href="{{ country_url }}" class="eyebrow-link">Onde aceita</a> · {% if city %}<a href="{{ state_url }}" class="eyebrow-link">{{ state_name }}</a>{% else %}{{ state_name }}{% endif %}
+          {%- endif -%}
         </span>
         <h1 class="headline">{{ heading }}</h1>
         <p class="lead">
-          {% if places %}
-            {{ places|length }} {{ "lugar" if places|length == 1 else "lugares" }}{% if not city %} em {{ cities|length }} {{ "cidade" if cities|length == 1 else "cidades" }}{% endif %},
-            segundo o BTC Map. {{ recent_count }} {{ "foi confirmado" if recent_count == 1 else "foram confirmados" }} por
+          {% if total %}
+            {{ total|milhar }} {{ "lugar" if total == 1 else "lugares" }}{% if not city %} em {{ cities|length }} {{ ("estado" if cities|length == 1 else "estados") if scope == "pais" else ("cidade" if cities|length == 1 else "cidades") }}{% endif %},
+            segundo o BTC Map. {{ recent_count|milhar }} {{ "foi confirmado" if recent_count == 1 else "foram confirmados" }} por
             alguém no local nos últimos 12 meses. Antes de pagar, confirme no balcão.
           {% else %}
             Ainda não há lugares no BTC Map por aqui. Se você conhece um, cadastre.
@@ -122,16 +126,16 @@
   <section class="page-panel">
     <div class="section-heading-row">
       <div>
-        <span class="section-kicker">Cidades</span>
-        <h2 class="section-heading">Escolha a cidade</h2>
+        <span class="section-kicker">{{ "Estados" if scope == "pais" else "Cidades" }}</span>
+        <h2 class="section-heading">{{ "Escolha o estado" if scope == "pais" else "Escolha a cidade" }}</h2>
       </div>
     </div>
-    <ul class="city-list">
+    <ul class="city-list{{ ' scroll-box scroll-box-short' if cities|length > 40 }}"{% if cities|length > 40 %} tabindex="0" aria-label="Lista de cidades"{% endif %}>
       {% for item in cities %}
       <li>
         <a href="{{ item.url or ('#' ~ item.slug) }}" class="city-chip{{ ' has-page' if item.url }}">
           <span>{{ item.name }}{% if item.url %} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>{% endif %}</span>
-          <span class="city-count">{{ item.count }}</span>
+          <span class="city-count">{{ item.count|milhar }}</span>
         </a>
       </li>
       {% endfor %}
@@ -141,27 +145,37 @@
 
   {% if city %}
   <section class="page-panel">
-    <div class="card-grid directory-grid">
-      {% for place in places %}{{ place_card(place) }}{% endfor %}
+    <div class="scroll-box" tabindex="0" aria-label="Lugares em {{ city.name }}">
+      <div class="card-grid directory-grid">
+        {% for place in places %}{{ place_card(place) }}{% endfor %}
+      </div>
     </div>
   </section>
   {% endif %}
 
-  {% for group in small_cities %}
-  <section class="page-panel" id="{{ group.slug }}">
+  {% if small_cities %}
+  <section class="page-panel">
     <div class="section-heading-row">
       <div>
-        <span class="section-kicker">{{ group.places|length }} {{ "lugar" if group.places|length == 1 else "lugares" }}</span>
-        <h2 class="section-heading">{{ group.name }}</h2>
+        <span class="section-kicker">Cidades com menos de {{ city_page_min }} lugares</span>
+        <h2 class="section-heading">Outras cidades {{ state_prep }} {{ state_name }}</h2>
       </div>
     </div>
-    <div class="card-grid directory-grid">
-      {% for place in group.places %}{{ place_card(place) }}{% endfor %}
+    <div class="scroll-box" tabindex="0" aria-label="Lugares das outras cidades">
+      {% for group in small_cities %}
+      <div class="city-group" id="{{ group.slug }}">
+        <h3 class="city-group-title">{{ group.name }} <span class="city-count">{{ group.places|length }}</span></h3>
+        <div class="card-grid directory-grid">
+          {% for place in group.places %}{{ place_card(place) }}{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </section>
-  {% endfor %}
+  {% endif %}
 
-  <section class="page-panel split-panel">
+  <section class="page-panel{{ ' split-panel' if scope != 'pais' }}">
+    {% if scope != "pais" %}
     <div>
       <span class="section-kicker">Ajude quem vem depois</span>
       <h2 class="section-heading">Passou num desses lugares?</h2>
@@ -170,6 +184,7 @@
         bitcoin, a data aparece aqui. Leva um minuto: abra "Passou lá? Confirme" no cartão do lugar.
       </p>
     </div>
+    {% endif %}
     <div>
       <span class="section-kicker">Tem um comércio{% if city %} em {{ city.name }}{% endif %}?</span>
       <h2 class="section-heading">Receba em Lightning, sem intermediário</h2>

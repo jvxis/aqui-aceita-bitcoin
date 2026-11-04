@@ -1,10 +1,10 @@
-# Cópia diária dos lugares do BTC Map no Brasil (btcmap_sync.py), para as páginas /onde-aceita. Instalar
+# Cópia semanal dos lugares do BTC Map no Brasil (btcmap_sync.py), para as páginas /onde-aceita. Instalar
 # junto com o .timer:
 #   cp deploy/aqui-aceita-bitcoin-btcmap.* /etc/systemd/system/ && systemctl daemon-reload
 #   systemctl enable --now aqui-aceita-bitcoin-btcmap.timer
 # O banco fica em btcmap.db na pasta do site (BTCMAP_DB_PATH muda), separado do database.db dos cadastros.
 [Unit]
-Description=Aceita Bitcoin? - copia diaria dos lugares do BTC Map no Brasil
+Description=Aceita Bitcoin? - copia semanal dos lugares do BTC Map no Brasil
 After=network-online.target
 Wants=network-online.target
 
