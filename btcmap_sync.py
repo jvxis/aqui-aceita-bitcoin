@@ -10,6 +10,9 @@ tudo; depois só o que mudou desde o último `updated_at` visto, com os removido
 contorno do Brasil vem da área 173 do BTC Map. O município sai da etiqueta addr:city do OpenStreetMap quando
 ela bate com um nome do IBGE perto dali; sem ela, da sede de município mais próxima.
 
+Na mesma rodada, os cadastros aprovados do nosso diretório ganham posição no mapa pelo endereço, no
+Nominatim (o buscador de endereços do OpenStreetMap), um por segundo como pede a política de uso dele.
+
 Uso: python btcmap_sync.py run      (o timer aqui-aceita-bitcoin-btcmap roda às segundas)
 """
 import csv
@@ -17,6 +20,7 @@ import json
 import logging
 import math
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -42,6 +46,11 @@ OUTLINE_MAX_AGE = 7 * 24 * 3600
 # Até onde a etiqueta addr:city pode estar da sede do município com aquele nome.
 CITY_NAME_MAX_KM = 80
 EPOCH = "1970-01-01T00:00:00Z"
+NOMINATIM = "https://nominatim.openstreetmap.org/search"
+# Resultado do Nominatim longe da sede da cidade do endereço é de outra cidade com rua de mesmo nome.
+GEOCODE_MAX_KM = 40
+# Endereço que o Nominatim não achou: tenta de novo depois desse tanto (o dono pode corrigir o cadastro).
+GEOCODE_RETRY = 30 * 24 * 3600
 
 logger = logging.getLogger("btcmap-sync")
 
@@ -125,6 +134,91 @@ class Locator:
             if km(lat, lon, best["lat"], best["lon"]) <= CITY_NAME_MAX_KM:
                 return best
         return min(self.all, key=lambda m: km(lat, lon, m["lat"], m["lon"]))
+
+
+def city_of_address(address):
+    """(cidade, UF) de um endereço "Rua X, 10 - Bairro, Cidade - UF, CEP", como vêm os nossos cadastros."""
+    matches = re.findall(r"([^,]+?)\s*-\s*([A-Z]{2})\b", address or "")
+    if not matches:
+        return None, None
+    city, uf = matches[-1]
+    return city.strip(), uf
+
+
+ABBREVIATIONS = [(r"\bAv\.?\s", "Avenida "), (r"\bR\.\s", "Rua "), (r"\bPres\.\s", "Presidente "),
+                 (r"\bDr\.\s", "Doutor "), (r"\bProf\.\s", "Professor "), (r"\bEng\.\s", "Engenheiro "),
+                 (r"\bSto\.\s", "Santo "), (r"\bSta\.\s", "Santa "), (r"\bAl\.\s", "Alameda "),
+                 (r"\bTv\.\s", "Travessa "), (r"\bPç\.\s", "Praça ")]
+STREET_WORDS = re.compile(r"^(Rua|Avenida|Alameda|Travessa|Rodovia|Estrada|Praça|Largo|Via)\b", re.IGNORECASE)
+
+
+def address_queries(address, city, uf):
+    """O endereço inteiro e, se ele não bastar, só rua, número e cidade, com as abreviações por extenso: o
+    bairro depois do traço, o CEP e um "Fundos de..." na frente costumam atrapalhar o Nominatim."""
+    parts = [re.sub(r"\s+-\s+.*$", "", part.strip()) for part in address.split(",") if part.strip()]
+    for pattern, full in ABBREVIATIONS:
+        parts = [re.sub(pattern, full, part) for part in parts]
+    start = next((i for i, part in enumerate(parts) if STREET_WORDS.match(part)), 0)
+    street = parts[start:start + 1]
+    if start + 1 < len(parts) and re.fullmatch(r"\d+[A-Za-z]?", parts[start + 1]) and int(re.sub(r"\D", "", parts[start + 1])):
+        street.append(parts[start + 1])
+    queries = [address, ", ".join(street + [city, uf])]
+    return list(dict.fromkeys(queries))
+
+
+def app_db_path():
+    value = os.getenv("DB_FILE_PATH") or "database.db"
+    path = Path(value).expanduser()
+    return path if path.is_absolute() else BASE_DIR / path
+
+
+def geocode_ours(path, fetch=fetch_json, municipalities=None, now=None, pause=1.1):
+    """Põe latitude e longitude nos cadastros aprovados que ainda não têm. Sem cidade reconhecível no
+    endereço, nem tenta; o app deixa esses fora do mapa."""
+    path = Path(path)
+    if not path.exists():
+        return {"achados": 0, "sem_resultado": 0}
+    now = now or time.time()
+    seats = {(item["chave"], item["uf"]): item for item in municipalities or load_municipalities()}
+    conn = sqlite3.connect(str(path), timeout=10)
+    conn.row_factory = sqlite3.Row
+    try:
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(estabelecimentos)")}
+        if "lat" not in columns:  # o app cria as colunas quando sobe
+            return {"achados": 0, "sem_resultado": 0}
+        rows = conn.execute(
+            "SELECT id, endereco FROM estabelecimentos WHERE status='aprovado' AND lat IS NULL "
+            "AND (geocodificado_em IS NULL OR geocodificado_em < ?)", (int(now - GEOCODE_RETRY),)
+        ).fetchall()
+        found = missed = 0
+        for row in rows:
+            city, uf = city_of_address(row["endereco"])
+            seat = seats.get((normalize_name(city), uf)) if city else None
+            if not seat:  # sem cidade conhecida no endereço não há como conferir o resultado
+                continue
+            position = None
+            for query in address_queries(row["endereco"], city, uf):
+                time.sleep(pause)
+                params = {"q": query, "format": "jsonv2", "countrycodes": "br", "limit": 3}
+                try:
+                    results = fetch(f"{NOMINATIM}?" + urllib.parse.urlencode(params))
+                except Exception as error:  # rede fora: tenta de novo na próxima rodada
+                    logger.warning("Nominatim falhou para o cadastro %s: %s", row["id"], error)
+                    return {"achados": found, "sem_resultado": missed, "erro": str(error)}
+                for result in results:
+                    lat, lon = float(result["lat"]), float(result["lon"])
+                    if km(lat, lon, seat["lat"], seat["lon"]) <= GEOCODE_MAX_KM:
+                        position = (lat, lon)
+                        break
+                if position:
+                    break
+            conn.execute("UPDATE estabelecimentos SET lat=?, lon=?, geocodificado_em=? WHERE id=?",
+                         (position[0] if position else None, position[1] if position else None, int(now), row["id"]))
+            found, missed = found + bool(position), missed + (not position)
+        conn.commit()
+        return {"achados": found, "sem_resultado": missed}
+    finally:
+        conn.close()
 
 
 # ---------- contorno do Brasil ----------
@@ -227,6 +321,7 @@ def main(argv):
     finally:
         conn.close()
     logger.info("BTC Map: %s", json.dumps(summary, ensure_ascii=False))
+    logger.info("Nossos cadastros no mapa: %s", json.dumps(geocode_ours(app_db_path()), ensure_ascii=False))
     return 0
 
 

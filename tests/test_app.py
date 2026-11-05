@@ -23,7 +23,6 @@ PAGINAS = [
     "/cadastro",
     "/materiais",
     "/sobre",
-    "/estabelecimentos",
     "/robots.txt",
     "/sitemap.xml",
 ]
@@ -103,7 +102,7 @@ def test_trilha_tem_navegacao_entre_passos(client):
 
 def test_sitemap_lista_a_trilha(client):
     xml = client.get("/sitemap.xml").get_data(as_text=True)
-    for path in ("/aprenda/como-receber", "/carteiras", "/estabelecimentos"):
+    for path in ("/aprenda/como-receber", "/carteiras", "/materiais"):
         assert path in xml
 
 

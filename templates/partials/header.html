@@ -12,7 +12,7 @@
 
     <nav class="nav-links" aria-label="Principal">
       {% for item in site_nav %}
-        <a href="{{ url_for(item.endpoint) }}" class="{% if page_section(item.endpoint) %}is-active{% endif %}"{% if page_section(item.endpoint) %} aria-current="page"{% endif %}>{{ item.label }}</a>
+        <a href="{{ url_for(item.endpoint, _anchor=item.get("anchor")) }}" class="{% if page_section(item) %}is-active{% endif %}"{% if page_section(item) %} aria-current="page"{% endif %}>{{ item.label }}</a>
       {% endfor %}
     </nav>
 
@@ -26,7 +26,7 @@
 
   <nav id="mobile-nav" class="mobile-nav" aria-label="Menu mobile" hidden>
     {% for item in site_nav %}
-      <a href="{{ url_for(item.endpoint) }}" class="{% if page_section(item.endpoint) %}is-active{% endif %}">{{ item.label }}</a>
+      <a href="{{ url_for(item.endpoint, _anchor=item.get("anchor")) }}" class="{% if page_section(item) %}is-active{% endif %}">{{ item.label }}</a>
     {% endfor %}
     <a href="{{ url_for('serve_cadastro') }}" class="btn btn-cta">Cadastrar local</a>
   </nav>

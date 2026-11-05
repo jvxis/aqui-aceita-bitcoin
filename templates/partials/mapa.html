@@ -1,0 +1,116 @@
+{#- O mapa dos lugares que aceitam bitcoin (04/11/2026). Usado na página inicial e nas de estado e cidade.
+    Precisa de map_focus, map_stats e map_synced (app.map_context) e de map_title. A lista ao lado vem pronta
+    do servidor (map_items para lugares, map_cities para cidades), para o Google e para quem está sem
+    JavaScript; o static/js/mapa.js a refaz conforme o mapa anda. -#}
+<section class="map-section" id="mapa" aria-labelledby="mapa-titulo">
+  <div class="map-inner">
+    <div class="map-head">
+      <div class="map-title">
+        <span class="section-kicker">Onde aceita</span>
+        <h2 id="mapa-titulo" class="section-heading">{{ map_title }}</h2>
+      </div>
+      <div class="map-tools">
+        <div class="map-search" role="search">
+          <label for="map-search" class="sr-only">Buscar uma cidade ou um lugar</label>
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="map-search" type="search" placeholder="Busque sua cidade ou um lugar" autocomplete="off"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="map-suggestions">
+          <ul id="map-suggestions" class="map-suggestions" role="listbox" aria-label="Sugestões" hidden></ul>
+        </div>
+        <button type="button" class="map-locate" id="map-locate" hidden>
+          <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i> Perto de mim
+        </button>
+      </div>
+    </div>
+
+    <div class="map-legend" role="group" aria-label="O que mostrar no mapa">
+      <button type="button" class="legend-chip" data-status="0" aria-pressed="true">
+        <span class="legend-mark is-ours" aria-hidden="true"></span> Conferido pelo projeto
+        <b class="legend-count" data-count="0">{{ map_stats.ours|milhar }}</b>
+      </button>
+      <button type="button" class="legend-chip" data-status="1" aria-pressed="true">
+        <span class="legend-mark is-recent" aria-hidden="true"></span> Confirmado no último ano
+        <b class="legend-count" data-count="1">{{ map_stats.recent|milhar }}</b>
+      </button>
+      <button type="button" class="legend-chip" data-status="2" aria-pressed="true">
+        <span class="legend-mark is-stale" aria-hidden="true"></span> Sem confirmação recente
+        <b class="legend-count" data-count="2">{{ (map_stats.total - map_stats.recent - map_stats.ours)|milhar }}</b>
+      </button>
+    </div>
+
+    <div class="map-stage">
+      <div class="map-canvas" id="map-canvas" role="region" aria-label="Mapa dos lugares que aceitam bitcoin"
+           data-focus="{{ map_focus|tojson|forceescape }}"
+           data-points="{{ url_for('serve_mapa_json') }}"
+           data-cities="{{ url_for('serve_cidades_json') }}"
+           data-place="{{ url_for('serve_lugar_json', ref='REF') }}"
+           data-cadastro="{{ url_for('serve_cadastro') }}">
+        <p class="map-loading">Carregando o mapa…</p>
+      </div>
+
+      <aside class="map-list" aria-labelledby="map-list-title">
+        <div class="map-list-head">
+          <strong id="map-list-title">{{ "Cidades com mais lugares" if map_cities else "Lugares nesta área" }}</strong>
+          <span id="map-list-note" class="map-list-note">
+            {%- if map_items %}{{ map_items|length|milhar }}{% endif -%}
+          </span>
+        </div>
+        <ol class="map-list-items" id="map-list-items">
+          {% for item in map_items or [] %}
+          <li>
+            <a class="map-item" href="#lugar-{{ item.ref }}" data-ref="{{ item.ref }}">
+              <span class="list-dot s{{ item.status }}" aria-hidden="true"></span>
+              <span class="map-item-text">
+                <strong>{{ item.name }}</strong>
+                <small>{{ item.type_label }} · {{ item.municipio }}</small>
+              </span>
+            </a>
+          </li>
+          {% endfor %}
+          {% for item in map_cities or [] %}
+          <li>
+            <a class="map-city" href="{{ item.url }}" data-lat="{{ item.lat }}" data-lon="{{ item.lon }}"
+               data-name="{{ item.name }}" data-uf="{{ item.uf }}">
+              <span>{{ item.name }} <small>{{ item.uf }}</small></span>
+              <span class="city-count">{{ item.count|milhar }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ol>
+        <div class="map-list-foot">
+          <a href="{{ url_for('serve_cadastro') }}" class="inline-link">Seu comércio aceita? Coloque no mapa</a>
+        </div>
+      </aside>
+    </div>
+
+    <p class="data-credit">
+      Lugares do <a href="https://btcmap.org/" target="_blank" rel="noopener">BTC Map</a>, com dados do
+      OpenStreetMap (© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a>,
+      licença ODbL), e os cadastros conferidos pelo projeto.{% if map_synced %} Atualizado em {{ map_synced }}.{% endif %}
+      Antes de pagar, confirme no balcão.
+    </p>
+  </div>
+</section>
+
+<dialog class="place-dialog" id="place-dialog" aria-labelledby="place-name">
+  <div class="place-sheet">
+    <header class="place-head">
+      <div class="place-kicker">
+        <span class="pill" id="place-type"></span>
+        <span class="place-flag" id="place-status"></span>
+      </div>
+      <button type="button" class="place-close" id="place-close" aria-label="Fechar">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+    <div class="place-body">
+      <img class="place-logo" id="place-logo" alt="" hidden>
+      <h3 class="place-name" id="place-name">…</h3>
+      <p class="place-address" id="place-address"></p>
+      <div class="badge-row" id="place-payments"></div>
+      <dl class="place-facts" id="place-facts"></dl>
+      <p class="place-note" id="place-note" hidden></p>
+    </div>
+    <footer class="place-actions" id="place-actions"></footer>
+  </div>
+</dialog>

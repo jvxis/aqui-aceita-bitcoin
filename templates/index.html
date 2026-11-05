@@ -1,47 +1,49 @@
 {% extends "base.html" %}
 {% from "aprenda/_macros.html" import step_url with context %}
 
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.css') }}">
+{% endblock %}
+
 {% block content %}
-  <section class="hero-section">
-    <div class="hero-grid">
+  <section class="hero-section home-hero">
+    <div class="home-hero-grid">
       <div class="hero-copy">
         <span class="eyebrow">Projeto educativo do BR⚡LN • Bitcoin e Lightning no Brasil</span>
-        <h1 class="headline">Aprenda a aceitar bitcoin no seu comércio, com segurança e sem complicação.</h1>
+        <h1 class="headline">Onde aceita bitcoin no Brasil, e como aceitar no seu comércio.</h1>
         <p class="lead">
-          Um guia em português para comerciantes e para quem quer começar a usar bitcoin no dia a dia: por que aceitar,
-          como começar, qual carteira usar, como receber no caixa e os cuidados que evitam prejuízo.
+          Ache no mapa quem já recebe em bitcoin perto de você. Se você vende, a trilha em português mostra como
+          receber pela Lightning sem maquininha, com segurança.
         </p>
         <div class="hero-actions">
           <a href="{{ url_for('serve_aprenda') }}" class="btn btn-cta">Começar a trilha</a>
-          <a href="{{ url_for('serve_estabelecimentos') }}" class="btn btn-secondary">Ver onde aceita</a>
-        </div>
-        <div class="trust-row">
-          <span>Em português</span>
-          <span>Sem promessa de ganho</span>
-          <span>Feito por quem usa no dia a dia</span>
-        </div>
-        <div class="metric-strip">
-          {% for stat in project_stats %}
-            <div class="metric-card">
-              <strong>{{ stat.value }}</strong>
-              <span>{{ stat.label }}</span>
-            </div>
-          {% endfor %}
+          <a href="{{ url_for('serve_cadastro') }}" class="btn btn-secondary">Cadastrar meu comércio</a>
         </div>
       </div>
-
-      <aside class="hero-card">
-        <span class="card-kicker">Para quem é</span>
-        <h2 class="hero-card-title">Para quem vende, para quem compra e para quem ajuda os outros a começar.</h2>
-        <ul class="feature-list">
-          <li>Comerciantes que querem receber bitcoin sem maquininha nem mensalidade.</li>
-          <li>Pessoas que querem pagar e receber em bitcoin com segurança.</li>
-          <li>Voluntários que apresentam o bitcoin ao comércio da cidade.</li>
-          <li>Comunidades locais que querem colocar a cidade no mapa.</li>
-        </ul>
-      </aside>
+      <dl class="hero-stats">
+        <div class="hero-stat is-total">
+          <dt>lugares que aceitam bitcoin</dt>
+          <dd>{{ map_stats.total|milhar }}</dd>
+        </div>
+        <div class="hero-stat is-recent">
+          <dt>confirmados no último ano</dt>
+          <dd>{{ map_stats.recent|milhar }}</dd>
+        </div>
+        <div class="hero-stat">
+          <dt>cidades em {{ map_stats.states }} estados</dt>
+          <dd>{{ map_stats.cities|milhar }}</dd>
+        </div>
+        <div class="hero-stat is-ours">
+          <dt>conferidos pelo projeto</dt>
+          <dd>{{ map_stats.ours|milhar }}</dd>
+        </div>
+      </dl>
     </div>
   </section>
+
+  {% with map_title="Lugares que aceitam bitcoin no Brasil", map_items=None %}
+    {% include "partials/mapa.html" %}
+  {% endwith %}
 
   <section class="page-panel">
     <div class="section-heading-row">
@@ -100,7 +102,7 @@
         <span class="section-kicker">Casos piloto</span>
         <h2 class="section-heading">Onde o projeto começou</h2>
       </div>
-      <a href="{{ url_for('serve_estabelecimentos') }}" class="inline-link">Ver todos os locais</a>
+      <a href="#mapa" class="inline-link">Ver no mapa</a>
     </div>
 
     <div class="card-grid">
@@ -127,80 +129,6 @@
     </div>
   </section>
 
-  {% if recent_establishments %}
-    <section class="page-panel">
-      <div class="section-heading-row">
-        <div>
-          <span class="section-kicker">Chegaram ao diretório</span>
-          <h2 class="section-heading">Cadastros mais recentes</h2>
-        </div>
-        <a href="{{ url_for('serve_estabelecimentos') }}" class="inline-link">Ver o diretório</a>
-      </div>
-      <div class="card-grid">
-        {% for establishment in recent_establishments %}
-          <article class="establishment-card">
-            <div class="establishment-logo-wrap">
-              <img src="{{ establishment.logo_url }}" alt="{{ establishment.name }}" class="establishment-logo" loading="lazy">
-            </div>
-            <div class="establishment-body">
-              <span class="pill">{{ establishment.type_label }}</span>
-              <h3>{{ establishment.name }}</h3>
-              <p>{{ establishment.address }}</p>
-              <div class="badge-row">
-                {% if establishment.accepts_lightning %}<span class="payment-badge is-lightning">Lightning</span>{% endif %}
-                {% if establishment.accepts_onchain %}<span class="payment-badge is-onchain">On-chain</span>{% endif %}
-                {% if establishment.accepts_contactless %}<span class="payment-badge is-contactless">Contactless</span>{% endif %}
-              </div>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-    </section>
-  {% endif %}
-
-  <section class="page-grid">
-    <article class="page-panel map-panel">
-      <span class="section-kicker">Mapa</span>
-      <h2 class="section-heading">Locais que aceitam bitcoin no BTC Map</h2>
-      <p class="muted-text">
-        O BTC Map mostra, no mundo todo, os locais que aceitam bitcoin, com dados do OpenStreetMap. Use para achar onde
-        pagar e, depois de começar a aceitar, para incluir o seu estabelecimento.
-      </p>
-      <div class="map-shell">
-        <iframe class="map-frame" src="https://btcmap.org/map#10/-24.9/-50.1" title="BTC Map" loading="lazy" allowfullscreen></iframe>
-      </div>
-    </article>
-
-    <aside class="hero-card">
-      <span class="card-kicker">Já aceita bitcoin?</span>
-      <h2 class="hero-card-title">Coloque o seu local no diretório</h2>
-      <form action="{{ url_for('serve_cadastro') }}" method="get" class="stack-form">
-        <label class="field">
-          <span>Nome do estabelecimento</span>
-          <input type="text" name="nome" placeholder="Ex.: Frederica's Koffiehuis" maxlength="120" required>
-        </label>
-        <label class="field">
-          <span>Tipo</span>
-          <select name="tipo" required>
-            <option value="">Selecione</option>
-            {% for option in submission_types %}
-              <option value="{{ option.value }}">{{ option.label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label class="field">
-          <span>Endereço</span>
-          <input type="text" name="endereco" placeholder="Rua, número, cidade, UF" maxlength="240" required>
-        </label>
-        <label class="field">
-          <span>E-mail</span>
-          <input type="email" name="email" placeholder="contato@empresa.com" maxlength="160">
-        </label>
-        <button type="submit" class="btn btn-cta btn-full">Continuar no formulário completo</button>
-      </form>
-    </aside>
-  </section>
-
   <section class="page-panel cta-band">
     <div>
       <span class="section-kicker">Próximo passo</span>
@@ -212,4 +140,10 @@
       <a href="{{ url_for('serve_materiais') }}" class="btn btn-secondary">Materiais para divulgar</a>
     </div>
   </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/leaflet.markercluster-1.5.3/leaflet.markercluster.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/mapa.js') }}"></script>
 {% endblock %}
