@@ -1728,7 +1728,6 @@ textarea {
 .data-credit a { color: inherit; }
 
 /* hero curto da página inicial: o texto à esquerda, os números do mapa à direita */
-html { overflow-x: clip; }
 .home-hero { padding-block: 26px; }
 .home-hero-grid {
   position: relative;
@@ -1767,10 +1766,11 @@ html { overflow-x: clip; }
 .hero-stat.is-recent dd { color: var(--brand); }
 .hero-stat.is-ours dd { color: var(--accent); }
 
-/* a faixa do mapa vai de uma borda à outra da tela */
+/* o mapa acompanha a largura do hero e dos outros blocos (o Jaime achou a faixa de borda a borda larga demais) */
 .map-section {
-  margin-inline: calc(50% - 50vw);
-  border-block: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
   background:
     radial-gradient(circle at 12% 0%, rgba(78, 224, 193, 0.08), transparent 40%),
     linear-gradient(180deg, rgba(6, 12, 22, 0.92), rgba(8, 17, 31, 0.92));
@@ -1779,11 +1779,9 @@ html { overflow-x: clip; }
 .map-inner {
   display: grid;
   gap: 14px;
-  max-width: 1680px;
-  margin: 0 auto;
   padding: 22px 16px 18px;
 }
-@media (min-width: 900px) { .map-inner { padding-inline: 28px; } }
+@media (min-width: 900px) { .map-inner { padding-inline: 24px; } }
 .map-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
 .map-title .section-heading { margin: 8px 0 0; font-size: clamp(1.3rem, 2.2vw, 1.75rem); }
 .map-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex: 1 1 360px; justify-content: flex-end; }
@@ -1875,8 +1873,8 @@ html { overflow-x: clip; }
 /* o mapa e a lista do que está à vista */
 .map-stage {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  height: clamp(480px, 70vh, 780px);
+  grid-template-columns: minmax(0, 1fr) 320px;
+  height: clamp(460px, 66vh, 680px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
