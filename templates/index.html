@@ -45,6 +45,14 @@
     {% include "partials/mapa.html" %}
   {% endwith %}
 
+  {% if region_states %}
+  {% with region_id="por-estado", region_kicker="Por estado", region_title="Onde aceita, estado por estado",
+          region_items=region_states, region_more=None,
+          region_note="Cada estado tem a sua página com o mapa já aproximado e as cidades com mais lugares." %}
+    {% include "partials/regioes.html" %}
+  {% endwith %}
+  {% endif %}
+
   <section class="page-panel">
     <div class="section-heading-row">
       <div>

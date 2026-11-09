@@ -56,6 +56,22 @@
     {% include "partials/mapa.html" %}
   {% endwith %}
 
+  {% set city_pages = cities|selectattr("url")|list %}
+  {% if not city and city_pages %}
+  {% with region_id="cidades", region_kicker="Cidades", region_title="Cidades " ~ state_prep ~ " " ~ state_name,
+          region_items=city_pages, region_more=None,
+          region_note=("As cidades com menos de " ~ city_page_min ~ " lugares aparecem no mapa acima.")
+                      if city_pages|length < cities|length else None %}
+    {% include "partials/regioes.html" %}
+  {% endwith %}
+  {% elif city and sibling_cities %}
+  {% with region_id="cidades", region_kicker="Mais cidades", region_title="Outras cidades " ~ state_prep ~ " " ~ state_name,
+          region_items=sibling_cities, region_more={"url": state_url, "label": "Ver o estado inteiro"},
+          region_note=None %}
+    {% include "partials/regioes.html" %}
+  {% endwith %}
+  {% endif %}
+
   <section class="page-panel split-panel">
     <div>
       <span class="section-kicker">Ajude quem vem depois</span>

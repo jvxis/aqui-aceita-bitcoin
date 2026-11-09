@@ -1,0 +1,22 @@
+{#- Links para as páginas de estado e de cidade (09/11/2026). Sem eles essas páginas só existiam no sitemap.
+    Recebe region_title, region_items ({name, url, count, uf?}) e, se houver, region_note e region_more. -#}
+<section class="page-panel region-panel" aria-labelledby="{{ region_id }}">
+  <div class="section-heading-row">
+    <div>
+      <span class="section-kicker">{{ region_kicker }}</span>
+      <h2 class="section-heading" id="{{ region_id }}">{{ region_title }}</h2>
+    </div>
+    {% if region_more %}<a href="{{ region_more.url }}" class="inline-link">{{ region_more.label }}</a>{% endif %}
+  </div>
+  <ul class="region-links">
+    {% for item in region_items %}
+    <li>
+      <a href="{{ item.url }}" class="region-link">
+        <span>{{ item.name }}{% if item.uf %} <small>{{ item.uf }}</small>{% endif %}</span>
+        <span class="city-count">{{ item.count|milhar }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if region_note %}<p class="muted-text section-note">{{ region_note }}</p>{% endif %}
+</section>

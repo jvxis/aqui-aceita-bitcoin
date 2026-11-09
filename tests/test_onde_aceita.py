@@ -208,7 +208,30 @@ def test_sitemap_only_when_indexing(onde, client):
     assert "ubatuba" not in sitemap and "/onde-aceita/mg" not in sitemap
     # o que virou redirecionamento sai do sitemap
     assert "/onde-aceita</loc>" not in sitemap and "/estabelecimentos" not in sitemap
-    assert 'content="index,follow"' in client.get("/onde-aceita/rs").get_data(as_text=True)
+    assert 'content="index,follow"' in client.get("/onde-aceita/sp").get_data(as_text=True)
+    # RS tem só 2 lugares: fica no ar, mas fora do índice e do sitemap (09/11/2026)
+    assert 'content="noindex,follow"' in client.get("/onde-aceita/rs").get_data(as_text=True)
+    assert "/onde-aceita/rs</loc>" not in sitemap
+    assert client.get("/onde-aceita/rs").status_code == 200
+
+
+def test_internal_links_reach_states_and_cities(onde, client):
+    # a home liga todos os estados com lugares
+    home = client.get("/").get_data(as_text=True)
+    assert 'id="por-estado"' in home
+    assert '<a href="/onde-aceita/sp" class="region-link">' in home
+    assert '<a href="/onde-aceita/rs" class="region-link">' in home
+    # a página do estado liga as cidades que têm página própria e avisa das menores
+    state = client.get("/onde-aceita/sp").get_data(as_text=True)
+    assert '<a href="/onde-aceita/sp/sao-paulo" class="region-link">' in state
+    assert "ubatuba" not in state.split('id="cidades"')[1].split("</section>")[0]
+    assert "menos de 10 lugares aparecem no mapa" in state
+    # a página da cidade não liga a si mesma e volta ao estado
+    city = client.get("/onde-aceita/sp/sao-paulo").get_data(as_text=True)
+    assert 'id="cidades"' not in city   # SP não tem outra cidade com página
+    # a Aprenda mostra as cidades com mais lugares
+    learn = client.get("/aprenda").get_data(as_text=True)
+    assert 'id="onde-ja-aceitam"' in learn and '<a href="/onde-aceita/sp/sao-paulo" class="region-link">' in learn
 
 
 def test_without_btcmap_database(onde, client, tmp_path):

@@ -889,6 +889,9 @@ ESTADOS = {
 # Cidade só ganha página própria com esse tanto de locais: página com dois ou três vira conteúdo ralo
 # para o Google. As menores aparecem na página do estado.
 CITY_PAGE_MIN = 10
+# Estado com menos lugares que isso fica no ar, mas fora do índice e do sitemap: com um ou dois lugares a
+# página é quase só o texto comum a todas, e o Google trata como conteúdo ralo (Search Console, 09/11/2026).
+STATE_INDEX_MIN = 5
 # Ícones (Material Icons) que o BTC Map usa no Brasil, com o nome em português. O resto vira "Comércio".
 ICON_LABELS = {
     "storefront": "Loja", "business": "Empresa e serviços", "computer": "Informática",
@@ -1051,7 +1054,8 @@ def onde_aceita_context(code, places, recent_count=None):
     synced = btcmap_synced_at()
     return {
         "page": "onde-aceita",
-        "robots_meta": "index,follow" if app.config["ONDE_ACEITA_INDEXAR"] else "noindex,follow",
+        "robots_meta": "index,follow" if app.config["ONDE_ACEITA_INDEXAR"] and len(places) >= STATE_INDEX_MIN
+        else "noindex,follow",
         "uf": code,
         "state_name": ESTADOS[code][0] if code else "Brasil",
         "state_prep": ESTADOS[code][1] if code else "no",
@@ -1306,6 +1310,9 @@ def serve_index():
         ),
         pilot_establishments=PILOT_ESTABLISHMENTS,
         map_cities=top_cities(),
+        # os estados com link na página mais forte do site: sem isso, as páginas de estado e de cidade só
+        # existiam no sitemap e o Google não chegava a visitar (Search Console, 09/11/2026)
+        region_states=country_states(),
         **map_context(),
     )
 
@@ -1320,6 +1327,7 @@ def serve_aprenda():
             "Trilha em seis passos para aceitar bitcoin e Lightning: por que aceitar, como começar, "
             "carteiras, como receber, cuidados de segurança e receber no próprio node."
         ),
+        region_cities=top_cities(8),
     )
 
 
@@ -1561,6 +1569,7 @@ def serve_onde_aceita_cidade(uf, cidade):
         places=places,
         shown=shown,
         cities=[],
+        sibling_cities=[item for item in state_cities(code) if item["url"] and item["slug"] != city["slug"]],
         **context,
     )
 
@@ -1578,6 +1587,8 @@ def serve_sitemap():
     paths += [url_for("serve_materiais"), url_for("serve_sobre"), url_for("serve_cadastro")]
     if app.config["ONDE_ACEITA_INDEXAR"]:
         for state in country_states():
+            if state["count"] < STATE_INDEX_MIN:
+                continue
             paths.append(state["url"])
             paths += [city["url"] for city in state_cities(state["code"]) if city["url"]]
     entries = "".join(f"<url><loc>{app.config['SITE_URL']}{path}</loc></url>" for path in paths)

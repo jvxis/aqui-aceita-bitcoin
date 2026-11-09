@@ -39,6 +39,14 @@
     </div>
   </section>
 
+  {% if region_cities %}
+  {% with region_id="onde-ja-aceitam", region_kicker="Na prática", region_title="Onde já aceitam bitcoin",
+          region_items=region_cities, region_more={"url": url_for("serve_index", _anchor="mapa"), "label": "Ver o mapa do Brasil"},
+          region_note="As cidades com mais lugares no mapa. Antes de pagar, confirme no balcão." %}
+    {% include "partials/regioes.html" %}
+  {% endwith %}
+  {% endif %}
+
   <section class="page-grid">
     <article class="page-panel prose" id="glossario">
       <span class="section-kicker">Glossário</span>
