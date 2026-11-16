@@ -49,6 +49,14 @@
           Ainda não há lugares no mapa por aqui. Se você conhece um, cadastre.
         {% endif %}
       </p>
+      {% if summary and summary.total %}
+      <p class="region-summary">
+        {% if summary.types %}O que mais aparece por aqui: {{ summary.types }}.{% endif %}
+        {{ summary.lightning|milhar }} de {{ summary.total|milhar }} {{ "aceita" if summary.lightning == 1 else "aceitam" }} Lightning.
+        {% if summary.newest %}A confirmação mais recente no BTC Map é de {{ summary.newest }}.{% endif %}
+        {% if summary.top_cities %}As cidades com mais lugares são {{ summary.top_cities }}.{% endif %}
+      </p>
+      {% endif %}
     </div>
   </section>
 

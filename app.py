@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime, timedelta
 import functools
 import logging
@@ -994,6 +995,7 @@ def serialize_place(row, today=None):
         "confirmation": label,
         "confirmation_class": css,
         "recent": age is not None and age < 365,
+        "verified_at": (row.get("verificado_em") or "")[:10],
         "btcmap_url": BTCMAP_PLACE_URL.format(id=row["id"]),
         "verify_url": BTCMAP_VERIFY_URL.format(id=row["id"]),
         "sort_key": (0 if age is not None else 1, age if age is not None else 0, btcmap_sync.normalize_name(row["nome"])),
@@ -1048,6 +1050,46 @@ def places_for(code, municipio=None):
     today = datetime.now()
     places = [serialize_place(row, today) for row in btcmap_rows(query, params)]
     return sorted(places, key=lambda place: place["sort_key"])
+
+
+def join_pt(items):
+    """["a", "b", "c"] -> "a, b e c"."""
+    items = list(items)
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " e " + items[-1] if items else ""
+
+
+def region_summary(places, cities=None):
+    """O texto que só esta página tem: os tipos de lugar que mais aparecem, quantos aceitam Lightning, a
+    confirmação mais recente no BTC Map e, no estado, as cidades com mais lugares. 16/11/2026: o Search Console
+    deixou as páginas de estado e cidade em "Descoberta, não indexada"; o texto comum a todas pesava mais que o
+    próprio de cada uma."""
+    counts = Counter(place["type_label"] for place in places)
+    if len(counts) > 1:
+        counts.pop("Comércio", None)   # o rótulo genérico só conta quando é o único
+    types = [f"{label} ({count})" for label, count in counts.most_common(3)]
+    newest = max((place["verified_at"] for place in places if place.get("verified_at")), default="")
+    top_cities = [f"{city['name']} ({city['count']})" for city in (cities or [])[:3]] if cities and len(cities) > 1 else []
+    return {
+        "types": join_pt(types),
+        "lightning": sum(1 for place in places if place["accepts_lightning"]),
+        "total": len(places),
+        "newest": f"{newest[5:7]}/{newest[:4]}" if len(newest) == 10 else "",
+        "top_cities": join_pt(top_cities),
+    }
+
+
+def region_lastmod(code=None, municipio=None):
+    """A última mudança dos lugares de uma região no BTC Map (AAAA-MM-DD), para o lastmod do sitemap."""
+    query, params = "SELECT MAX(COALESCE(atualizado_em, '')) a, MAX(COALESCE(verificado_em, '')) v FROM lugares", []
+    if code:
+        query += " WHERE uf=?"
+        params.append(code)
+        if municipio:
+            query += " AND municipio=?"
+            params.append(municipio)
+    rows = btcmap_rows(query, params)
+    day = max((rows[0]["a"] or "")[:10], (rows[0]["v"] or "")[:10]) if rows else ""
+    return day if re.fullmatch(r"\d{4}-\d{2}-\d{2}", day) else None
 
 
 def onde_aceita_context(code, places, recent_count=None):
@@ -1537,6 +1579,7 @@ def serve_onde_aceita_estado(uf):
         places=places,
         shown=shown,
         cities=cities,
+        summary=region_summary(places, cities),
         **context,
     )
 
@@ -1570,6 +1613,7 @@ def serve_onde_aceita_cidade(uf, cidade):
         shown=shown,
         cities=[],
         sibling_cities=[item for item in state_cities(code) if item["url"] and item["slug"] != city["slug"]],
+        summary=region_summary(places),
         **context,
     )
 
@@ -1582,16 +1626,22 @@ def serve_robots():
 
 @app.route("/sitemap.xml")
 def serve_sitemap():
-    paths = [url_for("serve_index"), url_for("serve_aprenda")]
-    paths += [url_for(item["endpoint"], **({"slug": item["slug"]} if item["slug"] else {})) for item in LEARN_TRAIL]
-    paths += [url_for("serve_materiais"), url_for("serve_sobre"), url_for("serve_cadastro")]
+    # 16/11/2026: as páginas que mudam com o BTC Map levam o lastmod da última mudança dos lugares delas.
+    # As demais ficam sem: uma data que não muda de verdade faz o Google ignorar o lastmod do site inteiro.
+    pages = [(url_for("serve_index"), region_lastmod()), (url_for("serve_aprenda"), None)]
+    pages += [(url_for(item["endpoint"], **({"slug": item["slug"]} if item["slug"] else {})), None) for item in LEARN_TRAIL]
+    pages += [(url_for("serve_materiais"), None), (url_for("serve_sobre"), None), (url_for("serve_cadastro"), None)]
     if app.config["ONDE_ACEITA_INDEXAR"]:
         for state in country_states():
             if state["count"] < STATE_INDEX_MIN:
                 continue
-            paths.append(state["url"])
-            paths += [city["url"] for city in state_cities(state["code"]) if city["url"]]
-    entries = "".join(f"<url><loc>{app.config['SITE_URL']}{path}</loc></url>" for path in paths)
+            pages.append((state["url"], region_lastmod(state["code"])))
+            pages += [(city["url"], region_lastmod(state["code"], city["name"]))
+                      for city in state_cities(state["code"]) if city["url"]]
+    entries = "".join(
+        f"<url><loc>{app.config['SITE_URL']}{path}</loc>{f'<lastmod>{day}</lastmod>' if day else ''}</url>"
+        for path, day in pages
+    )
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{entries}</urlset>'

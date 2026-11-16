@@ -215,6 +215,31 @@ def test_sitemap_only_when_indexing(onde, client):
     assert client.get("/onde-aceita/rs").status_code == 200
 
 
+def test_sitemap_lastmod_follows_the_btcmap(onde, client):
+    """16/11/2026: as páginas que mudam com o BTC Map levam a data da última mudança dos lugares delas; as
+    demais ficam sem lastmod, para a data valer alguma coisa para o Google."""
+    onde.app.config["ONDE_ACEITA_INDEXAR"] = True
+    sitemap = client.get("/sitemap.xml").get_data(as_text=True)
+    recent = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    assert f"/onde-aceita/sp</loc><lastmod>{recent}</lastmod>" in sitemap
+    assert f"/onde-aceita/sp/sao-paulo</loc><lastmod>{recent}</lastmod>" in sitemap
+    assert "/aprenda</loc></url>" in sitemap          # página fixa, sem data
+
+
+def test_each_region_page_has_its_own_summary(onde, client):
+    state = client.get("/onde-aceita/sp").get_data(as_text=True)
+    summary = state.split('class="region-summary"')[1].split("</p>")[0]
+    month = (datetime.now() - timedelta(days=30)).strftime("%m/%Y")
+    assert "Restaurante (13)" in summary
+    assert "13 de 13 aceitam Lightning" in summary
+    assert f"A confirmação mais recente no BTC Map é de {month}" in summary
+    assert "As cidades com mais lugares são São Paulo (11) e Ubatuba (2)" in summary
+    city = client.get("/onde-aceita/sp/sao-paulo").get_data(as_text=True)
+    city_summary = city.split('class="region-summary"')[1].split("</p>")[0]
+    assert "11 de 11 aceitam Lightning" in city_summary
+    assert "As cidades com mais lugares" not in city_summary
+
+
 def test_internal_links_reach_states_and_cities(onde, client):
     # a home liga todos os estados com lugares
     home = client.get("/").get_data(as_text=True)
