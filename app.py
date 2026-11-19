@@ -188,9 +188,11 @@ LEARN_TRAIL = [
         "slug": "como-comecar",
         "endpoint": "serve_aprenda_artigo",
         "title": "Como começar",
+        # 19/11/2026: título da busca diferente do da trilha (posição 6 no Google e nenhum clique com "Como começar").
+        "seo_title": "Como aceitar bitcoin no seu comércio: passo a passo",
         "kicker": "Passo 2",
         "summary": "Do primeiro teste com poucos sats até a primeira venda real, em oito passos.",
-        "description": "Passo a passo para o comerciante começar a receber bitcoin: carteira, teste, caixa, equipe e divulgação.",
+        "description": "Do zero ao primeiro pagamento em bitcoin na sua loja: escolha a carteira, faça um teste, organize o caixa, treine a equipe e divulgue.",
     },
     {
         "slug": None,
@@ -1384,7 +1386,7 @@ def serve_aprenda_artigo(slug):
     return render_template(
         f"aprenda/{slug}.html",
         page="aprenda",
-        page_title=f"{article['title']} | Aceita Bitcoin?",
+        page_title=f"{article.get('seo_title') or article['title']} | Aceita Bitcoin?",
         page_description=article["description"],
         article=article,
         previous_step=previous_step,
