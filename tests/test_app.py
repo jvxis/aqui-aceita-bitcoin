@@ -100,6 +100,15 @@ def test_trilha_tem_navegacao_entre_passos(client):
     assert "/carteiras" in html
 
 
+def test_como_comecar_tem_titulo_de_busca_proprio(client):
+    # 19/11/2026: a busca mostra "Como aceitar bitcoin no seu comércio"; a trilha continua dizendo "Como começar".
+    html = client.get("/aprenda/como-comecar").get_data(as_text=True)
+    assert "<title>Como aceitar bitcoin no seu comércio: passo a passo | Aceita Bitcoin?</title>" in html
+    assert "Do zero ao primeiro pagamento em bitcoin na sua loja" in html
+    assert "Como começar" in html
+    assert "<title>Por que aceitar bitcoin | Aceita Bitcoin?</title>" in client.get("/aprenda/por-que-aceitar").get_data(as_text=True)
+
+
 def test_sitemap_lista_a_trilha(client):
     xml = client.get("/sitemap.xml").get_data(as_text=True)
     for path in ("/aprenda/como-receber", "/carteiras", "/materiais"):
